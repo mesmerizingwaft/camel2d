@@ -101,8 +101,8 @@ module GameMain : Scene = struct
 
   let load_resources () =
     let open Promise in
-    Resource.load_img "/examples/chohan/static/imgs/bg.jpg" >>= fun bg ->
-    Resource.load_img "/examples/chohan/static/imgs/tsubofurishi.png" >>= fun fg ->
+    Resource.load_img "/samples/chohan/static/imgs/bg.jpg" >>= fun bg ->
+    Resource.load_img "/samples/chohan/static/imgs/tsubofurishi.png" >>= fun fg ->
     let bucket = Resource.create_bucket () in
     Hashtbl.add bucket "bg" bg;
     Hashtbl.add bucket "fg" fg;
