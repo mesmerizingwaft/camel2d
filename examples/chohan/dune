@@ -1,0 +1,4 @@
+(executable
+ (name chohan)
+ (modes js)
+ (libraries camel2d))

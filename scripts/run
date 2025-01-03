@@ -1,0 +1,15 @@
+#!/bin/bash -eu
+
+PROJECT_ROOT=$(dirname $(cd $(dirname $0); pwd))
+SCRIPT_DIR=$PROJECT_ROOT/scripts
+EXAMPLE_DIR=$PROJECT_ROOT/examples
+
+function finally() {
+    pkill -9 http-server
+}
+
+trap finally EXIT
+
+dune build
+google-chrome --incognito http://127.0.0.1:8080/examples/$1
+http-server -p 8080
