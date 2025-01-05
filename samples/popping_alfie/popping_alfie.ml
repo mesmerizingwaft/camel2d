@@ -72,6 +72,9 @@ module GameMain: Scene = struct
   let gen_chamomile () =
     let h = Random.int (popping_alfie.height) in
     Entity.create_from_image "chamomile" "chamomile" ~pos:(popping_alfie.width, h) ~size:(50, 50)
+  let gen_score score =
+    let text = Printf.sprintf "score: %d" score in
+    Entity.create_from_text "score" text ~color:(`RGBA (255, 255, 255, 1.)) ~outline:(`Edging (0, 0, 0)) ~pt:50 ~pos:(10, 10) ~size:(50 * 9, 50)
 
   (* Logic *)
   let score = ref 0
@@ -84,6 +87,11 @@ module GameMain: Scene = struct
   let update_alfie's_y new_y =
     let E {y; _} = alfie1 in y := new_y;
     let E {y; _} = alfie2 in y := new_y
+
+  let update_physics () =
+    if !jump_power > 0 then jump_power := Int.min jump_max (!jump_power + 1);
+    alfie's_speed := if !alfie's_hight > 0 then !alfie's_speed - gravity else Int.max 0 !alfie's_speed;
+    alfie's_hight := Int.max 0 (!alfie's_hight + !alfie's_speed)
 
   (* event handler *)
   let event_handler ev entities =
@@ -99,39 +107,44 @@ module GameMain: Scene = struct
     update_entities entities
 
   (* Arbitrator *)
+  let gen_item_at_random entities =
+    if Random.float 1. <= 0.01
+    then entities @ [gen_chamomile ()]
+    else entities
+
+  let update_score entities =
+    let open Entity in
+    entities
+    |> update_when (has_id "score")
+      (fun _ -> gen_score !score)
+
   let arbitrator entities =
     print_endline @@ Printf.sprintf "Score: %d" !score;
-    if !jump_power > 0 then jump_power := Int.min jump_max (!jump_power + 1);
-    alfie's_speed := if !alfie's_hight > 0 then !alfie's_speed - gravity else Int.max 0 !alfie's_speed;
-    alfie's_hight := Int.max 0 (!alfie's_hight + !alfie's_speed);
+    update_physics ();
     update_alfie's_y (ground_height - !alfie's_hight);
-    let entities =
-      if Random.float 1. <= 0.01
-      then entities @ [gen_chamomile ()]
-      else entities
-    in
+    let entities = gen_item_at_random entities in
     List.iter (fun (Entity.E {id; x; _}) ->
       if id = "chamomile" then x := !x - 1
     ) entities;
     let entities =
-      List.filter (fun (Entity.E {id; x; _}) -> not (id = "chamomile" && !x < 0)) entities
+      let open Entity in
+      entities
+      |> remove_when ((has_id "chamomile") &&& (x_is_smaller_than 0))
     in
     let entities =
+      let open Entity in
       let entities' =
-        List.filter (fun ((Entity.E {id; _}) as entity) ->
-          not (id = "chamomile" && Entity.check_collision alfie1 entity)) entities
+        remove_when ((has_id "chamomile") &&& (check_collision alfie1)) entities
       in
       score := !score + (List.length entities) - (List.length entities');
       entities'
     in
     let entities =
-      if !alfie's_hight > 0
-      then List.map (fun ((Entity.E {id; _}) as entity) ->
-        if id = "alfie" then alfie2 else entity
-      ) entities
-      else List.map (fun ((Entity.E {id; _}) as entity) ->
-        if id = "alfie" then alfie1 else entity
-      ) entities
+      let open Entity in
+      entities
+      |> update_when (has_id "alfie")
+        (fun _ -> if !alfie's_hight > 0 then alfie2 else alfie1)
+      |> update_score
     in
     update_entities entities
 
@@ -148,7 +161,7 @@ module GameMain: Scene = struct
     alfie's_hight := 0;
     alfie's_speed := 0;
     jump_power := 0;
-    [bg; alfie1; alfie2], arbitrator, event_handler
+    [bg; alfie1; alfie2; gen_score 0], arbitrator, event_handler
 end
 
 let _ =

@@ -17,12 +17,14 @@ let render (E {render; _}) = render
 let update_when condition f = List.map (fun entity ->
   if condition entity then f entity else entity
 )
+let remove_when condition = List.filter (fun entity -> not (condition entity))
 
 let (&&&) c1 c2 entity = c1 entity && c2 entity
 
 let has_id target_id (E {id; _}) = target_id = id
 let is_in mx my (E {x; y; w; h; _}) =
   !x <= mx && mx <= !x + !w && !y <= my && my <= !y + !h
+let x_is_smaller_than xx (E {x; _}) = !x < xx
 
 let check_collision (E e1) (E e2) =
   let cx1, cy1 = !(e1.x) + !(e1.w) / 2, !(e1.y) + !(e1.h) / 2 in
