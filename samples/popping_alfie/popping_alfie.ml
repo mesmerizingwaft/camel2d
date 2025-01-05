@@ -84,10 +84,6 @@ module GameMain: Scene = struct
   let jump_power = ref 0
   let jump_max = 20
 
-  let update_alfie's_y new_y =
-    let E {y; _} = alfie1 in y := new_y;
-    let E {y; _} = alfie2 in y := new_y
-
   let update_physics () =
     if !jump_power > 0 then jump_power := Int.min jump_max (!jump_power + 1);
     alfie's_speed := if !alfie's_hight > 0 then !alfie's_speed - gravity else Int.max 0 !alfie's_speed;
@@ -112,25 +108,50 @@ module GameMain: Scene = struct
     then entities @ [gen_chamomile ()]
     else entities
 
-  let update_score entities =
+  let update_alfie's_y entities =
+    let open Entity in
+    let new_y = (ground_height - !alfie's_hight) in
+    entities
+    |> update_when (has_id "alfie")
+      (fun (E entity) -> E { entity with y = new_y})
+
+  let update_items entities =
     let open Entity in
     entities
-    |> update_when (has_id "score")
-      (fun _ -> gen_score !score)
+    |> update_when (has_id "chamomile")
+      (fun (E entity) -> E { entity with x = entity.x - 1 })
+
+  let update_alfie's_texture entities =
+    let open Entity in
+    entities
+    |> update_when (has_id "alfie") (fun (E {y; _}) ->
+      let E alfie1 = alfie1 in
+      let E alfie2 = alfie2 in
+      if !alfie's_hight > 0 then E {alfie2 with y} else E {alfie1 with y}
+    )
+
+  let remove_expired_items entities =
+    let open Entity in
+    let alfie = List.find (has_id "alfie") entities in
+    entities
+    |> remove_when ((has_id "chamomile") &&& ((x_is_smaller_than 0) ||| (check_collision alfie)))
+
+  let update_score entities =
+    let open Entity in
+    let alfie = List.find (has_id "alfie") entities in
+    score := !score + (count_when ((has_id "chamomile") &&& (check_collision alfie)) entities);
+    entities
+    |> update_when (has_id "score") (fun _ -> gen_score !score)
 
   let arbitrator entities =
     update_physics ();
-    update_alfie's_y (ground_height - !alfie's_hight);
-    List.iter (fun (Entity.E {id; x; _}) ->
-      if id = "chamomile" then x := !x - 1
-    ) entities;
-    score := !score + Entity.(count_when ((has_id "chamomile") &&& (check_collision alfie1)) entities);
-    let open Entity in
     entities
-    |> remove_when ((has_id "chamomile") &&& ((x_is_smaller_than 0) ||| (check_collision alfie1)))
-    |> update_when (has_id "alfie") (fun _ -> if !alfie's_hight > 0 then alfie2 else alfie1)
-    |> gen_item_at_random
+    |> update_alfie's_y
+    |> update_items
     |> update_score
+    |> remove_expired_items
+    |> update_alfie's_texture
+    |> gen_item_at_random
     |> update_entities
 
   let load_resources () =
