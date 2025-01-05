@@ -38,11 +38,25 @@ module MouseMove = struct
   }
 end
 
+module KeyDown = struct
+  type t = {
+    key_code: int
+  }
+end
+
+module KeyUp = struct
+  type t = {
+    key_code: int
+  }
+end
+
 type t =
   | MouseUp of MouseUp.t
   | MouseDown of MouseDown.t
   | MouseClick of MouseClick.t
   | MouseMove of MouseMove.t
+  | KeyDown of KeyDown.t
+  | KeyUp of KeyUp.t
 
 let _stack : t Queue.t = Queue.create ()
 
@@ -98,6 +112,22 @@ let init (context: Camel2d_context.t) () =
     Js._false
   ) in
   Dom_html.addEventListener canvas Dom_html.Event.mousemove handler Js._false
+  |> ignore;
+  let handler = Dom_html.handler (fun e ->
+    let key_code = e##.keyCode in
+    let ev = KeyDown {key_code} in
+    _push ev;
+    Js._false
+  ) in
+  Dom_html.addEventListener Dom_html.document Dom_html.Event.keydown handler Js._false
+  |> ignore;
+  let handler = Dom_html.handler (fun e ->
+    let key_code = e##.keyCode in
+    let ev = KeyUp {key_code} in
+    _push ev;
+    Js._false
+  ) in
+  Dom_html.addEventListener Dom_html.document Dom_html.Event.keyup handler Js._false
   |> ignore
 
 let take () = Queue.take_opt _stack

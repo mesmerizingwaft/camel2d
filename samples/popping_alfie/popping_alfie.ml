@@ -97,9 +97,9 @@ module GameMain: Scene = struct
   let event_handler ev entities =
     if !alfie's_hight = 0 then begin
       match ev with
-        | Event.MouseDown _ ->
+        | Event.MouseDown _ | Event.KeyDown {key_code = 32} ->
           jump_power := 1
-        | Event.MouseUp _ ->
+        | Event.MouseUp _ | Event.KeyUp {key_code = 32} ->
           alfie's_speed := !jump_power;
           jump_power := 0
         | _ -> ()
