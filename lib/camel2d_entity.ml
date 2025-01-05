@@ -18,8 +18,10 @@ let update_when condition f = List.map (fun entity ->
   if condition entity then f entity else entity
 )
 let remove_when condition = List.filter (fun entity -> not (condition entity))
+let count_when condition entities = List.length @@ List.filter condition entities
 
 let (&&&) c1 c2 entity = c1 entity && c2 entity
+let (|||) c1 c2 entity = c1 entity || c2 entity
 
 let has_id target_id (E {id; _}) = target_id = id
 let is_in mx my (E {x; y; w; h; _}) =

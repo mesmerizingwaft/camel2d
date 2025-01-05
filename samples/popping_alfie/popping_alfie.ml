@@ -119,34 +119,19 @@ module GameMain: Scene = struct
       (fun _ -> gen_score !score)
 
   let arbitrator entities =
-    print_endline @@ Printf.sprintf "Score: %d" !score;
     update_physics ();
     update_alfie's_y (ground_height - !alfie's_hight);
-    let entities = gen_item_at_random entities in
     List.iter (fun (Entity.E {id; x; _}) ->
       if id = "chamomile" then x := !x - 1
     ) entities;
-    let entities =
-      let open Entity in
-      entities
-      |> remove_when ((has_id "chamomile") &&& (x_is_smaller_than 0))
-    in
-    let entities =
-      let open Entity in
-      let entities' =
-        remove_when ((has_id "chamomile") &&& (check_collision alfie1)) entities
-      in
-      score := !score + (List.length entities) - (List.length entities');
-      entities'
-    in
-    let entities =
-      let open Entity in
-      entities
-      |> update_when (has_id "alfie")
-        (fun _ -> if !alfie's_hight > 0 then alfie2 else alfie1)
-      |> update_score
-    in
-    update_entities entities
+    score := !score + Entity.(count_when ((has_id "chamomile") &&& (check_collision alfie1)) entities);
+    let open Entity in
+    entities
+    |> remove_when ((has_id "chamomile") &&& ((x_is_smaller_than 0) ||| (check_collision alfie1)))
+    |> update_when (has_id "alfie") (fun _ -> if !alfie's_hight > 0 then alfie2 else alfie1)
+    |> gen_item_at_random
+    |> update_score
+    |> update_entities
 
   let load_resources () =
     ResourceUtils.load_imgs img_root [
