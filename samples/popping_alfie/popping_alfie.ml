@@ -1,7 +1,9 @@
 open Camel2d
 
-let img_root = "/samples/popping_alfie/static/imgs/"
+let img_root = "./static/imgs/"
 let popping_alfie = Game.create ()
+
+let score = ref 0
 
 module GameTitle: Scene = struct
   (* Entities *)
@@ -72,12 +74,14 @@ module GameMain: Scene = struct
   let gen_chamomile () =
     let h = Random.int (popping_alfie.height) in
     Entity.create_from_image "chamomile" "chamomile" ~pos:(popping_alfie.width, h) ~size:(50, 50)
+  let gen_strawberry () =
+    let h = Random.int (popping_alfie.height) in
+    Entity.create_from_image "strawberry" "strawberry" ~pos:(popping_alfie.width, h) ~size:(50, 50)
   let gen_score score =
     let text = Printf.sprintf "score: %d" score in
     Entity.create_from_text "score" text ~color:(`RGBA (255, 255, 255, 1.)) ~outline:(`Edging (0, 0, 0)) ~pt:50 ~pos:(10, 10) ~size:(50 * 9, 50)
 
   (* Logic *)
-  let score = ref 0
   let alfie's_hight = ref 0
   let alfie's_speed = ref 0
   let gravity = 1
@@ -104,8 +108,15 @@ module GameMain: Scene = struct
 
   (* Arbitrator *)
   let gen_item_at_random entities =
+    let strawberry_rate = Float.min 0.9 (0.1 *. ((float_of_int !score) /. 1.)) in
+    print_endline @@ Printf.sprintf "rate: %f" strawberry_rate;
     if Random.float 1. <= 0.01
-    then entities @ [gen_chamomile ()]
+    then begin
+      if Random.float 1. <= strawberry_rate then
+        entities @ [gen_strawberry ()]
+      else
+        entities @ [gen_chamomile ()]
+    end
     else entities
 
   let update_alfie's_y entities =
@@ -118,7 +129,7 @@ module GameMain: Scene = struct
   let update_items entities =
     let open Entity in
     entities
-    |> update_when (has_id "chamomile")
+    |> update_when ((has_id "chamomile") ||| (has_id "strawberry"))
       (fun (E entity) -> E { entity with x = entity.x - 1 })
 
   let update_alfie's_texture entities =
@@ -134,7 +145,9 @@ module GameMain: Scene = struct
     let open Entity in
     let alfie = List.find (has_id "alfie") entities in
     entities
-    |> remove_when ((has_id "chamomile") &&& ((x_is_smaller_than 0) ||| (check_collision alfie)))
+    |> remove_when (
+      ((has_id "chamomile") ||| (has_id "strawberry"))
+      &&& ((x_is_smaller_than 0) ||| (check_collision alfie)))
 
   let update_score entities =
     let open Entity in
@@ -143,34 +156,83 @@ module GameMain: Scene = struct
     entities
     |> update_when (has_id "score") (fun _ -> gen_score !score)
 
+  let check_gameover entities =
+    let open Entity in
+    let alfie = List.find (has_id "alfie") entities in
+    List.exists (has_id "strawberry" &&& check_collision alfie) entities
+
   let arbitrator entities =
     update_physics ();
-    entities
-    |> update_alfie's_y
-    |> update_items
-    |> update_score
-    |> remove_expired_items
-    |> update_alfie's_texture
-    |> gen_item_at_random
-    |> update_entities
+    let entities = entities
+      |> update_alfie's_y
+      |> update_items
+      |> update_score
+    in
+    if check_gameover entities then load_new_scene "gameover"
+    else
+      entities
+      |> remove_expired_items
+      |> update_alfie's_texture
+      |> gen_item_at_random
+      |> update_entities
 
   let load_resources () =
     ResourceUtils.load_imgs img_root [
       ("bg", "bg.jpg");
       ("alfie1", "alfie1.png");
       ("alfie2", "alfie2.png");
-      ("chamomile", "flower_chamomile.png")
+      ("chamomile", "flower_chamomile.png");
+      ("strawberry", "fruit_strawberry.png")
     ]
 
   let start () =
     Random.self_init ();
+    score := 0;
     alfie's_hight := 0;
     alfie's_speed := 0;
     jump_power := 0;
     [bg; alfie1; alfie2; gen_score 0], arbitrator, event_handler
 end
 
+module GameOver : Scene = struct
+
+  module Literal = struct
+    let label_tweet = "\u{7d50}\u{679c}\u{3092}tweet\u{3059}\u{308b}"
+    let tweet_body = "PoppingAlfie\u{3067}\u{904a}\u{3093}\u{3060}\u{3088}\u{ff01}\r\nScore:"
+  end
+
+  let btn_tweet = Entity.create_from_text
+    "btn_tweet"
+    Literal.label_tweet
+    ~pt:10
+    ~pos:(10, 10)
+    ~size:(10, 10)
+
+    let load_resources () =
+      ResourceUtils.load_imgs img_root []
+
+  let event_handler ev entities =
+    match ev with
+      | Event.MouseUp {x; y; _} ->
+        if Entity.is_in x y btn_tweet
+        then
+          SNSUtils.tweet
+            (Literal.tweet_body ^ string_of_int !score)
+            ~url:(Some "https://www.waft-games.com/popping_alfie");
+        update_entities entities
+      | _ ->
+        update_entities entities
+
+  let arbitrator = Arbitrator.init
+
+  let start () =
+    Random.self_init ();
+    [btn_tweet], arbitrator, event_handler
+
+end
+
 let _ =
   Game.add_scene popping_alfie "title" (module GameTitle);
   Game.add_scene popping_alfie "main" (module GameMain);
+  Game.add_scene popping_alfie "gameover" (module GameOver);
   start popping_alfie "title"

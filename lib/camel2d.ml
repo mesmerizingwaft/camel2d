@@ -1,5 +1,7 @@
 open Js_of_ocaml
 
+module type Scene = Camel2d_scene.T
+
 module Promise = Promise
 module Game = Camel2d_game
 module Entity = Camel2d_entity
@@ -8,7 +10,7 @@ module Resource = Camel2d_resource
 module ResourceUtils = Camel2d_resource_utils
 module Event = Camel2d_event
 module EventHandler = Camel2d_eventhandler
-module type Scene = Camel2d_scene.T
+module SNSUtils = Camel2d_snsutils
 
 let load_new_scene scene_name = Camel2d_decision.LoadScene scene_name
 let update_entities entities = Camel2d_decision.Update entities

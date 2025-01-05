@@ -1,7 +1,21 @@
 <html>
     <head>
         <title>Sample - PoppingAlfie</title>
-        <script type="text/javascript" src="/_build/default/samples/popping_alfie/popping_alfie.bc.js"></script>
+        <meta name="twitter:card" content="summary"></meta>
+        <script type="text/javascript">
+            function generateUUID() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = (Math.random() * 16) | 0;
+                    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+                    return v.toString(16);
+                });
+            }
+
+            const script = document.createElement('script');
+            script.src = `/_build/default/samples/popping_alfie/popping_alfie.bc.js?uuid=${generateUUID()}`;
+            script.type = 'text/javascript';
+            document.head.appendChild(script);
+        </script>
         <style>
             #main {
                 display: flex;
@@ -21,8 +35,6 @@
         <div id="system-message"></div>
         <main id="main">
             <canvas id="canvas-main"></canvas>
-            <section>
-            </section>
         </main>
     </body>
 </html>
