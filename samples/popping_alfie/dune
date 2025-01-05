@@ -1,0 +1,4 @@
+(executable
+ (name popping_alfie)
+ (modes js)
+ (libraries camel2d))

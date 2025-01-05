@@ -35,40 +35,51 @@ module GameMain : Scene = struct
   let roll () = (Random.int 6) + 1
   let roll_twice () = (roll (), roll ())
 
+  (* event handler *)
+  let event_handler_init ev entities =
+    match ev with
+      | Event.MouseMove {x; y} ->
+        let open Entity in
+        entities
+        |> (update_when
+            (has_id "button_cho")
+            (fun entity ->
+              if is_in x y entity
+              then button_cho_on_mousehover
+              else button_cho))
+        |> (update_when
+            (has_id "button_han")
+            (fun entity ->
+              if is_in x y entity
+              then button_han_on_mousehover
+              else button_han))
+        |> update_entities
+      | Event.MouseUp {x; y; _} ->
+        let open Entity in
+        if List.exists (has_id "button_cho" &&& is_in x y) entities
+        then phase := DiceRolling (Cho, 0);
+        if List.exists (has_id "button_han" &&& is_in x y) entities
+        then phase := DiceRolling (Han, 0);
+        update_entities entities
+      | _ -> update_entities entities
+
+  let event_handler_end ev entities =
+    match ev with
+      | Event.MouseUp _ ->
+        print_endline "load_new_scene";
+        load_new_scene "main"
+      | _ -> update_entities entities
+
+  let event_handler ev entities =
+    (match !phase with
+      | Init -> event_handler_init
+      | DiceRolling _ -> EventHandler.init
+      | End _ -> event_handler_end) ev entities
+
   (* arbitrator *)
   let arbitrator entities =
     match !phase with
-      | Init ->
-        let entities = ref entities in
-        let rec event_loop () =
-          match Event.take () with
-            | None -> ()
-            | Some (Event.MouseMove {x; y}) ->
-              entities := List.map (fun entity ->
-                match entity with
-                  | Entity.E {id; _} when id = "button_cho" ->
-                    if Entity.is_in entity x y
-                    then button_cho_on_mousehover
-                    else button_cho
-                  | Entity.E {id; _} when id = "button_han" ->
-                    if Entity.is_in entity x y
-                    then button_han_on_mousehover
-                    else button_han
-                  | _ -> entity
-              ) !entities
-            | Some (Event.MouseUp {x; y; _}) ->
-              List.iter (fun entity ->
-                match entity with
-                  | Entity.E {id; _} when Entity.is_in entity x y ->
-                    if id = "button_cho" then phase := DiceRolling (Cho, 0)
-                    else if id = "button_han" then phase := DiceRolling (Han, 0)
-                    else ()
-                  | _ -> ()
-              ) !entities
-            | _ -> event_loop ()
-        in
-        event_loop ();
-        Arbitrator.Update !entities
+      | Init -> update_entities entities
       | DiceRolling (hand, counter) ->
         let a, b = roll_twice () in
         let dice_l = create_dice "dice_l" a ~pt:100 ~idx:1 in
@@ -76,43 +87,33 @@ module GameMain : Scene = struct
         if counter <= 60
         then begin
           phase := DiceRolling (hand, counter + 1);
-          Arbitrator.Update [bg; fg; dice_l; dice_r]
+          update_entities [bg; fg; dice_l; dice_r]
         end
         else begin
           phase := End (hand, a, b);
-          Arbitrator.Update [bg; fg; dice_l; dice_r]
+          update_entities [bg; fg; dice_l; dice_r]
         end
       | End (hand, a, b) ->
-        let rec is_clicked () =
-          match Event.take () with
-            | None -> false
-            | Some (Event.MouseUp _) -> true
-            | _ -> is_clicked ()
-        in
-        if is_clicked () then Arbitrator.LoadScene "main"
-        else
-          let dice_l = create_dice "dice_l" a ~pt:100 ~idx:1 in
-          let dice_r = create_dice "dice_r" b ~pt:100 ~idx:2 in
-          let entities = [bg; fg; dice_l; dice_r] in
-          if hand = Cho && (a + b) mod 2 = 0
-            || hand = Han && (a + b) mod 2 <> 0
-          then Arbitrator.Update (entities @ [label_win])
-          else Arbitrator.Update (entities @ [label_lose])
+        let dice_l = create_dice "dice_l" a ~pt:100 ~idx:1 in
+        let dice_r = create_dice "dice_r" b ~pt:100 ~idx:2 in
+        let entities = [bg; fg; dice_l; dice_r] in
+        if hand = Cho && (a + b) mod 2 = 0
+          || hand = Han && (a + b) mod 2 <> 0
+        then update_entities (entities @ [label_win])
+        else update_entities (entities @ [label_lose])
 
   let load_resources () =
-    let open Promise in
-    Resource.load_img "/samples/chohan/static/imgs/bg.jpg" >>= fun bg ->
-    Resource.load_img "/samples/chohan/static/imgs/tsubofurishi.png" >>= fun fg ->
-    let bucket = Resource.create_bucket () in
-    Hashtbl.add bucket "bg" bg;
-    Hashtbl.add bucket "fg" fg;
-    return bucket
+    let img_root = "/samples/chohan/static/imgs/" in
+    ResourceUtils.load_imgs img_root [
+      ("bg", "bg.jpg");
+      ("fg", "tsubofurishi.png")
+    ]
 
   let start () =
     Random.self_init ();
     phase := Init;
     let entities = [ bg; fg; speech; button_cho; button_han ] in
-    entities, arbitrator
+    entities, arbitrator, event_handler
 end
 
 let _ =
