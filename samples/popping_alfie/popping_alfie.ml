@@ -60,7 +60,7 @@ module GameTitle: Scene = struct
     Hashtbl.add bucket "bg" bg;
     return bucket
 
-  let start () =
+  let start _ =
     counter := 0;
     show_inst := true;
     [bg; title_logo; title_inst], arbitrator, evnet_handler
@@ -72,11 +72,11 @@ module GameMain: Scene = struct
   let alfie1 = Entity.create_from_image "alfie" "alfie1" ~pos:(10, ground_height) ~size:(80, 50)
   let alfie2 = Entity.create_from_image "alfie" "alfie2" ~pos:(10, ground_height) ~size:(90, 50)
   let gen_chamomile () =
-    let h = Random.int (popping_alfie.height) in
-    Entity.create_from_image "chamomile" "chamomile" ~pos:(popping_alfie.width, h) ~size:(50, 50)
+    let h = ground_height - Random.int (popping_alfie.height - ground_height)  in
+    Entity.create_from_image "chamomile" "chamomile" ~pos:(popping_alfie.width, h) ~size:(30, 30)
   let gen_strawberry () =
-    let h = Random.int (popping_alfie.height) in
-    Entity.create_from_image "strawberry" "strawberry" ~pos:(popping_alfie.width, h) ~size:(50, 50)
+    let h = ground_height - Random.int (popping_alfie.height - ground_height)  in
+    Entity.create_from_image "strawberry" "strawberry" ~pos:(popping_alfie.width, h) ~size:(30, 30)
   let gen_score score =
     let text = Printf.sprintf "score: %d" score in
     Entity.create_from_text "score" text ~color:(`RGBA (255, 255, 255, 1.)) ~outline:(`Edging (0, 0, 0)) ~pt:50 ~pos:(10, 10) ~size:(50 * 9, 50)
@@ -86,7 +86,7 @@ module GameMain: Scene = struct
   let alfie's_speed = ref 0
   let gravity = 1
   let jump_power = ref 0
-  let jump_max = 20
+  let jump_max = 25
 
   let update_physics () =
     if !jump_power > 0 then jump_power := Int.min jump_max (!jump_power + 1);
@@ -130,7 +130,7 @@ module GameMain: Scene = struct
     let open Entity in
     entities
     |> update_when ((has_id "chamomile") ||| (has_id "strawberry"))
-      (fun (E entity) -> E { entity with x = entity.x - 1 })
+      (fun (E entity) -> E { entity with x = entity.x - 3 })
 
   let update_alfie's_texture entities =
     let open Entity in
@@ -185,7 +185,7 @@ module GameMain: Scene = struct
       ("strawberry", "fruit_strawberry.png")
     ]
 
-  let start () =
+  let start _ =
     Random.self_init ();
     score := 0;
     alfie's_hight := 0;
@@ -198,36 +198,66 @@ module GameOver : Scene = struct
 
   module Literal = struct
     let label_tweet = "\u{7d50}\u{679c}\u{3092}tweet\u{3059}\u{308b}"
+    let label_retry = "\u{30ea}\u{30c8}\u{30e9}\u{30a4}?"
     let tweet_body = "PoppingAlfie\u{3067}\u{904a}\u{3093}\u{3060}\u{3088}\u{ff01}\r\nScore:"
   end
-
-  let btn_tweet = Entity.create_from_text
-    "btn_tweet"
-    Literal.label_tweet
-    ~pt:10
-    ~pos:(10, 10)
-    ~size:(10, 10)
 
     let load_resources () =
       ResourceUtils.load_imgs img_root []
 
   let event_handler ev entities =
+    let btn_tweet = List.find Entity.(has_id "btn_tweet") entities in
+    let btn_retry = List.find Entity.(has_id "btn_retry") entities in
     match ev with
-      | Event.MouseUp {x; y; _} ->
-        if Entity.is_in x y btn_tweet
-        then
-          SNSUtils.tweet
-            (Literal.tweet_body ^ string_of_int !score)
-            ~url:(Some "https://www.waft-games.com/popping_alfie");
+      | Event.MouseUp {x; y; _} when Entity.is_in x y btn_tweet ->
+        SNSUtils.tweet
+          (Literal.tweet_body ^ string_of_int !score)
+          ~url:(Some "https://www.waft-games.com/popping_alfie");
         update_entities entities
+      | Event.MouseUp {x; y; _} when Entity.is_in x y btn_retry ->
+        load_new_scene "main"
       | _ ->
         update_entities entities
 
   let arbitrator = Arbitrator.init
 
-  let start () =
+  let start context =
+    let cx, cy = popping_alfie.width / 2, popping_alfie.height / 2 in
+    let label_gameover =
+      let open Entity.TextLabel in
+      let style = create_style
+        ~font_face:(Some "Mochiy Pop One") 20
+      in        
+      create
+        ~context
+        ~style
+        ~pos:(cx, cy - 50)
+        ~base_horizontal:BHCenter
+        "label_gameover"
+        "GAMEOVER"
+      in
+    let style_btns = Entity.TextLabel.create_style 10 in
+    let btn_tweet =
+      let open Entity.TextLabel in
+      create
+        ~context
+        ~style:style_btns
+        ~pos:(cx, cy)
+        ~base_horizontal:BHCenter
+        "btn_tweet"
+        Literal.label_tweet in
+    let btn_retry =
+      let open Entity.TextLabel in
+      create
+        ~context
+        ~style: style_btns
+        ~pos:(cx, cy + 20)
+        ~base_horizontal: BHCenter
+        "btn_retry"
+        Literal.label_retry
+    in
     Random.self_init ();
-    [btn_tweet], arbitrator, event_handler
+    [label_gameover; btn_tweet; btn_retry], arbitrator, event_handler
 
 end
 

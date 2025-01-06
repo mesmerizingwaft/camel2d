@@ -25,8 +25,8 @@ let _main_loop (context: Camel2d_context.t) scenes (world: Camel2d_world.t) =
     let world =
       let open Promise in
       world
-      |> Camel2d_world.handle_events scenes
-      >>= Camel2d_world.arbitrate scenes
+      |> Camel2d_world.handle_events context scenes
+      >>= Camel2d_world.arbitrate context scenes
     in
     Promise.continue_after_resolved world (fun world ->
       _render context world;
@@ -46,7 +46,7 @@ let start (t: Game.t) (scene_name: string) =
   Dom_html.window##.onload := Dom_html.handler (fun _ ->
     let context = Camel2d_context.create () in
     let scene = Camel2d_game.fetch_scene t scene_name in
-    let world = Camel2d_world.load_scene scene in
+    let world = Camel2d_world.load_scene context scene in
     _init context t;
     Promise.continue_after_resolved world (fun world ->
       _main_loop context t.scenes world

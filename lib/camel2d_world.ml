@@ -21,13 +21,13 @@ let create () =
 let render (context: Camel2d_context.t) t =
   List.iter (fun e -> Camel2d_entity.render e context t.resource_bucket) t.entities
 
-let load_scene (module Scene: Camel2d_scene.T) =
+let load_scene context (module Scene: Camel2d_scene.T) =
   let open Promise in
   Scene.load_resources () >>= fun resource_bucket ->
-    let entities, arbitrator, event_handler = Scene.start () in
+    let entities, arbitrator, event_handler = Scene.start context in
     return { entities; arbitrator; event_handler; resource_bucket }
 
-let handle_events scenes t =
+let handle_events context scenes t =
   let rec inner entities =
     match Camel2d_event.take () with
       | None -> Promise.return { t with entities }
@@ -37,19 +37,19 @@ let handle_events scenes t =
           | LoadScene scene_name ->
             Camel2d_event.clear ();
             let scene = Hashtbl.find scenes scene_name in
-            load_scene scene
+            load_scene context scene
         end
   in
   inner t.entities
 
-let arbitrate scenes t =
+let arbitrate context scenes t =
   let result =
     match t.arbitrator t.entities with
       | Update entities ->
         Promise.return { t with entities }
       | LoadScene scene_name ->
         let scene = Hashtbl.find scenes scene_name in
-        load_scene scene
+        load_scene context scene
   in
   result
 

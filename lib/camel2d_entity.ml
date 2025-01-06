@@ -47,6 +47,95 @@ let create_from_image id resource_name ~pos ~size =
   in
   E { id; render; x; y; w; h }
 
+module TextLabel: sig
+  type color = RGBA of int * int * int * float
+  type outline = NoOutline | Edging of color
+  type base_horizontal = BHCenter | BHLeft
+  type text_style
+
+  val create_style :
+    ?color: color ->
+    ?outline: outline ->
+    ?font_face: string option ->
+    ?letter_spacing: string ->
+    int -> text_style
+  
+  val text_width_of: context:Camel2d_context.t -> style:text_style -> string -> int
+  val create: context: Camel2d_context.t -> style: text_style -> pos:(int * int) -> ?base_horizontal: base_horizontal -> string -> string -> t
+end = struct
+  type color = RGBA of int * int * int * float
+  type outline = NoOutline | Edging of color
+  type base_horizontal = BHCenter | BHLeft
+  type text_style = {
+    pt: int;
+    color: color;
+    outline: outline;
+    font_face: string option;
+    letter_spacing: string;
+  }
+
+  let create_style
+    ?(color=RGBA(255, 255, 255, 1.))
+    ?(outline=NoOutline)
+    ?(font_face=None)
+    ?(letter_spacing="normal")
+    pt =
+    { pt; color; outline; font_face; letter_spacing }
+
+  let _js_str_of_color = function
+    | RGBA (r, g, b, a) -> Js.string @@ Printf.sprintf "rgba(%d,%d,%d,%f)" r g b a
+    
+  let _pt_as_px style = Printf.sprintf "%dpx" style.pt
+
+  let _js_font_of style =
+    let pt = _pt_as_px style in
+    let font_face = Option.value style.font_face ~default:"caption" in
+    Js.string @@ Printf.sprintf "%s %s" pt font_face
+
+  let _with_style style context k =
+    let ctx = Camel2d_context.get_context2d context in
+    ctx##save;
+    ctx##.fillStyle := _js_str_of_color style.color;
+    ctx##.font := _js_font_of style;
+    ctx##.textBaseline := Js.string "top";
+    Ext.set_letter_spacing_of ctx style.letter_spacing;
+    let result = k ctx in
+    ctx##restore;
+    result
+
+  let _render_outline ctx outline text x y =
+    (match outline with
+    | NoOutline -> ()
+    | Edging color ->
+      ctx##save;
+      ctx##.lineWidth := 3.;
+      ctx##.fillStyle := _js_str_of_color color;
+      ctx##strokeText (Js.string text) (float_of_int x) (float_of_int y);
+      ctx##restore;
+    )
+
+  let text_width_of ~context ~style text =
+    let text = Js.string text in
+    _with_style style context (fun ctx -> (ctx##measureText text)##.width)
+    |> int_of_float
+
+  let create ~context ~style ~pos ?(base_horizontal=BHLeft) id text =
+    let (x, y) = pos in
+    let (w, h) = text_width_of ~context ~style text, style.pt in
+    let render (E {x; y; _}) context _ =
+      _with_style style context (fun ctx ->
+        let x = if base_horizontal = BHCenter
+          then x - w / 2
+          else x
+        in
+        _render_outline ctx style.outline text x y;
+        ctx##fillText (Js.string text) (float_of_int x) (float_of_int y);
+        ctx##restore
+      )
+    in
+    E { id; render; x; y; w; h }
+end
+
 let create_from_text
   ?(color=`RGBA(255, 255, 255, 1.))
   ?(outline=`NoOutline)

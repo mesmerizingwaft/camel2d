@@ -109,7 +109,7 @@ module GameMain : Scene = struct
       ("fg", "tsubofurishi.png")
     ]
 
-  let start () =
+  let start _ =
     Random.self_init ();
     phase := Init;
     let entities = [ bg; fg; speech; button_cho; button_han ] in
