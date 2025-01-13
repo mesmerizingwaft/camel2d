@@ -1,8 +1,10 @@
+open Ext
 open Js_of_ocaml
 
 
 type t = {
   html_canvas: Dom_html.canvasElement Js.t;
+  audio_context: audioContext Js.t
 }
 
 let create () =
@@ -13,7 +15,8 @@ let create () =
     with Invalid_argument _ ->
       failwith @@ Printf.sprintf "Fatal error: canvas[id='canvas-main'] did not exist"
   in
-  {html_canvas}
+  let audio_context = new%js audioContext in
+  {html_canvas; audio_context}
 
 let get_context2d t = (t.html_canvas)##getContext Dom_html._2d_ 
 let cleanup_canvas (t: t) =

@@ -1,55 +1,49 @@
 
-type entity = Camel2d_entity.t
-type arbitrator = Camel2d_arbitrator.t
-type event_handler = Camel2d_eventhandler.t
-type resource_bucket = Camel2d_resource.bucket
-
-type t = {
-  entities: entity list;
-  arbitrator: arbitrator;
-  event_handler: event_handler;
-  resource_bucket: resource_bucket;
+type 'a t = state -> 'a next_scene
+and 'a next_scene =
+  | NewScene of string
+  | Continue of 'a * state
+and state = {
+  entities: Camel2d_entity.t list;
+  bucket: Camel2d_resource.bucket
 }
 
-let create () =
-  let entities = [] in
-  let arbitrator = Camel2d_arbitrator.init in
-  let event_handler = Camel2d_eventhandler. init in
-  let resource_bucket = Camel2d_resource.create_bucket () in
-  {entities; arbitrator; event_handler; resource_bucket}
+let create_state bucket entities = {bucket; entities}
 
-let render (context: Camel2d_context.t) t =
-  List.iter (fun e -> Camel2d_entity.render e context t.resource_bucket) t.entities
+let return a = fun state -> Continue (a, state)
+let start_scene name = fun _ -> NewScene name
+let run ~state (t: unit t) = t state
+let bind (t: 'a t) ~(f: 'a -> 'b t) = fun state ->
+  match t state with
+    | NewScene name -> NewScene name
+    | Continue (a, state) -> f a state
+let map t ~f = bind t ~f:(fun a -> return (f a))
 
-let load_scene context (module Scene: Camel2d_scene.T) =
-  let open Promise in
-  Scene.load_resources () >>= fun resource_bucket ->
-    let entities, arbitrator, event_handler = Scene.start context in
-    return { entities; arbitrator; event_handler; resource_bucket }
+let (let*) t f = bind t ~f
+let (let+) t f = map t ~f
+let (>>) t1 t2 = let* _ = t1 in t2
 
-let handle_events context scenes t =
-  let rec inner entities =
-    match Camel2d_event.take () with
-      | None -> Promise.return { t with entities }
-      | Some ev -> begin
-        match t.event_handler ev entities with
-          | Update entities -> inner entities
-          | LoadScene scene_name ->
-            Camel2d_event.clear ();
-            let scene = Hashtbl.find scenes scene_name in
-            load_scene context scene
-        end
-  in
-  inner t.entities
+let get = fun state -> Continue (state, state)
+let put state = fun _ -> Continue ((), state)
 
-let arbitrate context scenes t =
-  let result =
-    match t.arbitrator t.entities with
-      | Update entities ->
-        Promise.return { t with entities }
-      | LoadScene scene_name ->
-        let scene = Hashtbl.find scenes scene_name in
-        load_scene context scene
-  in
-  result
+let get_entities = let* {entities; _} = get in return entities
+let get_bucket = let* {bucket; _} = get in return bucket
+let get_renderables = let+ entities = get_entities in Camel2d_entity.renderables_of entities
+let get_playables = let+ entities = get_entities in Camel2d_entity.playables_of entities
 
+let put_entities entities = let* state = get in
+  put {state with entities}
+let put_bucket bucket = let* state = get in
+  put {state with bucket}
+let put_renderables renderables = let* state = get in
+  let p e = Camel2d_entity.P e in
+  let r e = Camel2d_entity.R e in
+  let entities = Camel2d_entity.playables_of state.entities in
+  let entities = (List.map p entities) @ (List.map r renderables) in
+  put {state with entities}
+let put_playables playables = let* state = get in
+  let p e = Camel2d_entity.P e in
+  let r e = Camel2d_entity.R e in
+  let entities = Camel2d_entity.renderables_of state.entities in
+  let entities = (List.map r entities) @ (List.map p playables) in
+  put {state with entities}
