@@ -3,14 +3,19 @@ open Camel2d
 let chohan = Game.create ()
 
 module Literal = struct
-  let cho = "\u{4e01}"
-  let han = "\u{534a}"
-  let speech = "\u{3055}\u{3042}\u{3055}\u{3042}\u{5f35}\u{3063}\u{305f}\u{5f35}\u{3063}\u{305f}\u{4e01}\u{65b9}\u{306a}\u{3044}\u{304b}\u{ff1f}\u{534a}\u{65b9}\u{306a}\u{3044}\u{304b}\u{ff1f}"
-  let dice_face = [|"\u{2680}"; "\u{2681}"; "\u{2682}"; "\u{2683}"; "\u{2684}"; "\u{2685}"|]
-  let win = "\u{52dd}"
-  let lose = "\u{8ca0}"
-  let message = "\u{3053}\u{306e}\u{30b2}\u{30fc}\u{30e0}\u{306f}\u{97f3}\u{304c}\u{51fa}\u{307e}\u{3059}(\u{30af}\u{30ea}\u{30c3}\u{30af}\u{3067}\u{30b9}\u{30bf}\u{30fc}\u{30c8})"
+  type t = {
+    cho: string;
+    han: string;
+    speech: string;
+    dice_face: string array;
+    win: string;
+    lose: string;
+    message: string;
+  } [@@deriving yojson]
+  let literals = Result.get_ok @@ of_yojson @@ Yojson.Safe.from_string [%blob "literals.json"]
 end
+
+let literals = Literal.literals
 
 module Agreement : Scene.T = struct
   let audios = []
@@ -25,7 +30,7 @@ module Agreement : Scene.T = struct
         create_style ~outline pt
       in
       let pos = (chohan.width / 2, (chohan.height - pt) / 2) in
-      create ~context ~style ~pos ~base_horizontal:BHCenter "message" Literal.message
+      create ~context ~style ~pos ~base_horizontal:BHCenter "message" literals.message
     in
     Entity.[R message]
 
@@ -64,7 +69,7 @@ module GameMain : Scene.T = struct
     let pt = 100 in
     let style = create_style pt in
     let pos = (chohan.width / 3 * idx, (chohan.height - pt) / 2) in
-    create ~context ~style ~pos ~base_horizontal: BHCenter id Literal.dice_face.(number - 1)
+    create ~context ~style ~pos ~base_horizontal: BHCenter id literals.dice_face.(number - 1)
 
   let create_label context label text =
     let open Entity.Renderable in
@@ -123,7 +128,7 @@ module GameMain : Scene.T = struct
       let font_face = Some "tamanegi" in
       let pos = ((sw / 3 - 50), (sh - 100)/2) in
       let style = create_style ~color ~outline ~font_face pt in
-      create ~context ~style ~pos id Literal.cho
+      create ~context ~style ~pos id literals.cho
     in
     gen Id.button_cho (RGBA (255, 255, 255, 1.)),
     gen Id.button_cho_mousehover (RGBA (255, 200, 200, 1.)) in
@@ -136,7 +141,7 @@ module GameMain : Scene.T = struct
       let font_face = Some "tamanegi" in
       let pos = ((sw / 3 * 2 - 50), (sh - 100)/2) in
       let style = TextLabel.create_style ~color ~outline ~font_face pt in
-      create ~context ~style ~pos id Literal.han
+      create ~context ~style ~pos id literals.han
     in
     gen Id.button_han (RGBA (255, 255, 255, 1.)),
     gen Id.button_han_mousehover (RGBA (255, 200, 200, 1.)) in
@@ -148,7 +153,7 @@ module GameMain : Scene.T = struct
         let outline = Edging (RGBA (0, 0, 0, 1.)) in
         create_style ~font_face ~outline 25
       in
-      create ~context ~style ~pos:((sw - 25 * 21) / 2, 20) Id.speech Literal.speech
+      create ~context ~style ~pos:((sw - 25 * 21) / 2, 20) Id.speech literals.speech
     in
     Random.self_init ();
     phase := Init;
@@ -228,8 +233,8 @@ module GameMain : Scene.T = struct
         if List.exists (has_id Id.win ||| has_id Id.lose) renderables then
           return ()
         else
-          let label_win = create_label context Id.win Literal.win in
-          let label_lose = create_label context Id.lose Literal.lose in
+          let label_win = create_label context Id.win literals.win in
+          let label_lose = create_label context Id.lose literals.lose in
           let dice_l = create_dice context Id.dice_l a ~idx:1 in
           let dice_r = create_dice context Id.dice_r b ~idx:2 in
           let result =

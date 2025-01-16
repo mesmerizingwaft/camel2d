@@ -1,4 +1,7 @@
 (executable
  (name chohan)
  (modes js)
- (libraries camel2d))
+ (libraries camel2d yojson ppx_deriving_yojson.runtime)
+ (preprocess (pps ppx_blob ppx_deriving_yojson))
+ (preprocessor_deps (file literals.json))
+)
