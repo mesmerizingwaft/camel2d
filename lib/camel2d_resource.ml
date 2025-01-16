@@ -41,12 +41,15 @@ module Image = struct
 end
 
 module Audio = struct
+  let _buff = ref []
+
   let resume (context: Camel2d_context.t) =
     context.audio_context##resume
 
   let load ~(context:context) ?(is_loop=true) path =
     let audio_context = context.audio_context in
     let e = Dom_html.(createAudio document) in
+    _buff := e::!_buff;
     e##.src := Js.string path;
     e##.loop := Js.bool is_loop;
     let promise, resolver = Promise.make () in
@@ -72,4 +75,13 @@ module Audio = struct
     | Audio audio ->
       ignore @@ audio##pause;
       audio##.currentTime := 0.
+
+  let stop_all () =
+    let stop node =
+      let node = Js.Unsafe.coerce node in
+      ignore @@ node##pause;
+      node##.currentTime := 0.
+    in
+    List.iter stop !_buff;
+    _buff := []
 end

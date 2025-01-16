@@ -9,13 +9,14 @@ val create_label : string -> label
 val load : bucket:bucket -> label:label -> t -> unit Promise.promise
 
 module Image : sig
-  val load : string -> t Promise.promise
+  val load : label -> t Promise.promise
   val render : bucket -> label -> context -> x:int -> y:int -> w:int -> h:int -> unit
 end
 
 module Audio : sig
   val resume : context -> unit
-  val load : context: context -> ?is_loop:bool -> string -> t Promise.promise
+  val load : context: context -> ?is_loop:bool -> label -> t Promise.promise
   val play : bucket -> label -> unit
   val stop : bucket -> label -> unit
+  val stop_all : unit -> unit
 end

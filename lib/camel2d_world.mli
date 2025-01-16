@@ -32,3 +32,23 @@ val put_entities: Camel2d_entity.t list -> unit t
 val put_bucket: Camel2d_resource.bucket -> unit t
 val put_renderables : Camel2d_renderable.t list -> unit t
 val put_playables : Camel2d_playable.t list -> unit t
+
+module Condition: sig
+  type t
+  val (&&&) : t -> t -> t
+  val (|||) : t -> t -> t
+  val has_id : string -> t
+  val is_in : int -> int -> t
+end
+
+module Updator: sig
+  type t
+  val show : t
+  val hide : t
+  val replace_by : Camel2d_entity.t -> t
+end
+
+val update_when : Condition.t -> Updator.t -> unit t
+val exists : Condition.t -> bool t
+val spawn : Camel2d_entity.t list -> unit t
+val replace_by_id : string -> Camel2d_entity.t -> unit t

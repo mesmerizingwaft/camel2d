@@ -7,6 +7,7 @@ module Event = Camel2d_event
 module Resource = Camel2d_resource
 module Entity = Camel2d_entity
 module RenderableUtils = Camel2d_renderable_utils
+module Templates = Camel2d_template
 
 let _event_loop event_handler =
   fun context ->
@@ -22,6 +23,7 @@ let _event_loop event_handler =
 let _load_new_scene context scenes name =
   let module S = (val Hashtbl.find scenes name : Scene.T) in
   let open Promise in
+  Resource.Audio.stop_all ();
   Scene.load_resources context (module S) >>= fun bucket ->
   let entities = S.initialize context in
   let state = World.create_state bucket entities in

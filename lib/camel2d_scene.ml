@@ -6,8 +6,8 @@ type event = Camel2d_event.t
 type label = Camel2d_resource.label
 
 module type T = sig
-  val images : (label * string) list
-  val audios : (label * string) list
+  val images : label list
+  val audios : label list
   val initialize : context -> entity list
   val update : context -> unit world
   val handle_event : context -> event -> unit world
@@ -16,15 +16,15 @@ end
 let load_images bucket (module Scene: T) =
   let open Camel2d_resource in
   Scene.images
-  |> List.map (fun (label, path) ->
-    Promise.(Image.load path >>= load ~bucket ~label))
+  |> List.map (fun label ->
+    Promise.(Image.load label >>= load ~bucket ~label))
   |> Promise.join
 
 let load_audios context bucket (module Scene: T) =
   let open Camel2d_resource in
   Scene.audios
-  |> List.map (fun (label, path) ->
-    Promise.(Audio.load ~context path >>= load ~bucket ~label))
+  |> List.map (fun label ->
+    Promise.(Audio.load ~context label >>= load ~bucket ~label))
   |> Promise.join
 
 let load_resources context (module Scene: T) =

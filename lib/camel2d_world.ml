@@ -47,3 +47,45 @@ let put_playables playables = let* state = get in
   let entities = Camel2d_entity.renderables_of state.entities in
   let entities = (List.map r entities) @ (List.map p playables) in
   put {state with entities}
+
+module Condition = struct
+  type t = Camel2d_entity.t -> bool
+  let (&&&) c1 c2 entity = c1 entity && c2 entity
+  let (|||) c1 c2 entity = c1 entity || c2 entity
+  let has_id target_id entity =
+    match entity with
+      | Camel2d_entity.R r -> Camel2d_renderable_utils.has_id target_id r
+      | _ -> false
+  let is_in x y entity =
+    match entity with
+      | Camel2d_entity.R r -> Camel2d_renderable_utils.is_in x y r
+      | _ -> false
+end
+
+module Updator = struct
+  type t = Camel2d_entity.t -> Camel2d_entity.t
+  let apply_if_renderable f = function
+      | Camel2d_entity.R r -> Camel2d_entity.R (f r)
+      | entity -> entity
+
+  let show = apply_if_renderable Camel2d_renderable_utils.show
+  let hide = apply_if_renderable Camel2d_renderable_utils.hide
+  let replace_by entity _ = entity
+end
+
+let update_when condition f =
+  let* entities = get_entities in
+  let entities = 
+    List.map (fun entity -> if condition entity then f entity else entity) entities in
+  put_entities entities
+
+let exists condition =
+  let* entities = get_entities in
+  return (List.exists condition entities)
+
+let spawn new_entities =
+  let* entities = get_entities in
+  put_entities (entities @ new_entities)
+
+let replace_by_id id new_entity =
+  update_when Condition.(has_id id) (Updator.replace_by new_entity)
