@@ -29,6 +29,8 @@ module GameMain : Scene.T = struct
     open Resource
     let bgm1 = gen_label ()
     let bgm2 = gen_label ()
+    let se_win = gen_label ()
+    let se_lose = gen_label ()
     let bg = gen_label ()
     let fg = gen_label ()
   end
@@ -40,6 +42,9 @@ module GameMain : Scene.T = struct
     >> set_audio_mode BGM
     >> load_audio bgm1 "bgm1.mp3"
     >> load_audio bgm2 "bgm2.mp3"
+    >> set_audio_mode SE
+    >> load_audio se_lose "lose.mp3"
+    >> load_audio se_win "win.mp3"
     >> set_image_root "/samples/chohan/static/imgs/"
     >> load_image bg "bg.jpg"
     >> load_image fg "tsubofurishi.png"
@@ -57,6 +62,11 @@ module GameMain : Scene.T = struct
     let dice_l = "dice_l"
     let dice_r = "dice_r"
     let speech = "speech"
+    (* Playables *)
+    let bgm1 = "bgm1"
+    let bgm2 = "bgm2"
+    let se_lose = "se_lose"
+    let se_win = "se_win"
   end
 
   (* Entity functions *)
@@ -104,8 +114,11 @@ module GameMain : Scene.T = struct
 
   let initialize context =
     let sw, sh = chohan.width, chohan.height in
-    let bgm = Entity.Playable.(
-      create "bgm" ResourceLabels.bgm1 |> set_to_play
+    let bgm1 = Entity.Playable.(
+      create Id.bgm1 ResourceLabels.bgm1 |> set_to_play
+    ) in
+    let bgm2 = Entity.Playable.(
+      create Id.bgm2 ResourceLabels.bgm2
     ) in
     let bg, fg =
       let open Entity.Renderable in
@@ -152,9 +165,15 @@ module GameMain : Scene.T = struct
       in
       create ~context ~style ~pos:((sw - 25 * 21) / 2, 20) Id.speech literals.speech
     in
+    let se_win = let open Entity.Playable in
+      create Id.se_win ResourceLabels.se_win
+    in
+    let se_lose = let open Entity.Playable in
+      create Id.se_lose ResourceLabels.se_lose
+    in
     let open World in
     update_phase Init
-    >> spawn_p [bgm]
+    >> spawn_p [bgm1; bgm2; se_win; se_lose]
     >> spawn_r [
       bg;
       fg;
@@ -177,7 +196,7 @@ module GameMain : Scene.T = struct
       | Event.MouseUp {x; y; _} ->
         let* cho_clicked = exists Condition.(has_id_r Id.button_cho &&& is_in x y) in
         let* han_clicked = exists Condition.(has_id_r Id.button_han &&& is_in x y) in
-        let button_clicked = Condition.(lift_r cho_clicked ||| lift_r han_clicked) in
+        let button_clicked = cho_clicked || han_clicked in
         let is_button = Condition.(any_of (List.map has_id_r Id.[button_cho; button_cho_mousehover; button_han; button_han_mousehover])) in
         let next_phase =
           if cho_clicked then DiceRolling(Cho, 0)
@@ -185,7 +204,9 @@ module GameMain : Scene.T = struct
           else Init
         in
         update_phase next_phase
-        >> update_when Condition.(button_clicked &&& is_button) Updator.hide
+        >> update_when Condition.(lift_p button_clicked &&& (has_id_p Id.bgm1)) Updator.stop
+        >> update_when Condition.(lift_p button_clicked &&& (has_id_p Id.bgm2)) Updator.play
+        >> update_when Condition.(lift_r button_clicked &&& is_button) Updator.hide
       | _ -> return ()
     in
     let final_handler = function
@@ -201,7 +222,8 @@ module GameMain : Scene.T = struct
   let update context =
     let open World in
     let* phase = use_phase in
-    match phase with
+    dbg_show_playables
+    >> match phase with
       | Init -> return ()
       | DiceRolling (hand, counter) ->
         let a, b = roll_twice () in
@@ -213,20 +235,19 @@ module GameMain : Scene.T = struct
         update_phase next_phase
         >> if dice_exists then replace_dice else spawn_r [dice_l; dice_r]
       | End (hand, a, b) ->
-        let* results_shown = exists Condition.(has_id_r Id.win ||| has_id_r Id.lose) in
+        let is_win = hand = Cho && (a + b) mod 2 = 0 || hand = Han && (a + b) mod 2 <> 0 in
+        let result_label = Condition.(has_id_r Id.win ||| has_id_r Id.lose) in
+        let* results_shown = exists result_label in
         if results_shown then return ()
         else
-          let label_win = create_label context Id.win literals.win in
+          stop_bgm Id.bgm2
+          >> play_bgm (if is_win then Id.se_win else Id.se_lose)
+          >> let label_win = create_label context Id.win literals.win in
           let label_lose = create_label context Id.lose literals.lose in
           let dice_l = create_dice context Id.dice_l a ~idx:1 in
           let dice_r = create_dice context Id.dice_r b ~idx:2 in
-          let result =
-            if hand = Cho && (a + b) mod 2 = 0
-              || hand = Han && (a + b) mod 2 <> 0
-            then label_win
-            else label_lose
-          in
-          spawn_r [dice_l; dice_r; result]
+          let label_result = if is_win then label_win else label_lose in
+          spawn_r [dice_l; dice_r; label_result]
 end
 
 let _ =

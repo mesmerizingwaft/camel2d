@@ -46,6 +46,11 @@ let dbg_show_renderables =
   let ids = List.map id_of renderables in
   print_endline @@ Printf.sprintf "[%s]" (String.concat ";" ids)
 
+let dbg_show_playables =
+  let+ playables = get_playables in
+  let ps = List.map Camel2d_entity.Playable.str_of playables in
+  print_endline @@ Printf.sprintf "[%s]" (String.concat ";" ps)
+
 module Condition = struct
   type r = Camel2d_entity.Renderable.t
   type p = Camel2d_entity.Playable.t
@@ -70,6 +75,7 @@ module Condition = struct
   let false_p = Playable (fun _ -> false)
 
   let lift_r b = if b then true_r else false_r
+  let lift_p b = if b then true_p else false_p
 
   let any_of_ bottom cs =
     let rec inner = function
@@ -109,6 +115,8 @@ module Updator = struct
   let hide = Renderable Camel2d_renderable_utils.hide
   let replace_by_r entity = Renderable (fun _ -> entity)
   let replace_by_p entity = Playable (fun _ -> entity)
+  let play = Playable Camel2d_entity.Playable.set_to_play
+  let stop = Playable Camel2d_entity.Playable.set_to_stop
 end
 
 let update_when: type a. a Condition.t -> a Updator.t -> unit t = fun condition updator ->
@@ -153,3 +161,9 @@ let put_ref r v =
 let print_endline msg =
   let+ _ = return () in
   print_endline msg
+
+let play_bgm id =
+  update_when Condition.(has_id_p id) Updator.play
+
+let stop_bgm id =
+  update_when Condition.(has_id_p id) Updator.stop

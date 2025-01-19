@@ -24,7 +24,7 @@ val get_playables : (Camel2d_entity.Playable.t list) t
 val put_playables : Camel2d_entity.Playable.t list -> unit t
 
 val dbg_show_renderables : unit t
-
+val dbg_show_playables : unit t
 (*
 
 val get : state t
@@ -50,6 +50,7 @@ module Condition: sig
   val false_r : Camel2d_entity.Renderable.t t
   val false_p : Camel2d_entity.Playable.t t
   val lift_r : bool -> Camel2d_entity.Renderable.t t
+  val lift_p : bool -> Camel2d_entity.Playable.t t
   val any_of : 'a. 'a t list -> 'a t
   val has_id_r : string -> Camel2d_entity.Renderable.t t
   val has_id_p : string -> Camel2d_entity.Playable.t t
@@ -62,6 +63,8 @@ module Updator: sig
   val hide : Camel2d_entity.Renderable.t t
   val replace_by_r : Camel2d_entity.Renderable.t -> Camel2d_entity_renderable.t t
   val replace_by_p : Camel2d_entity.Playable.t -> Camel2d_entity_playable.t t
+  val play : Camel2d_entity.Playable.t t
+  val stop : Camel2d_entity.Playable.t t
 end
 
 val update_when : 'a Condition.t -> 'a Updator.t -> unit t
@@ -74,3 +77,6 @@ val replace_by_id_p : string -> Camel2d_entity.Playable.t -> unit t
 val use_ref : 'a ref -> 'a t
 val put_ref : 'a ref -> 'a -> unit t
 val print_endline : string -> unit t
+
+val play_bgm : string -> unit t
+val stop_bgm : string -> unit t

@@ -30,6 +30,7 @@ let load ~(context:context) ?(is_loop=true) path =
 
 let play {audio; is_ended} =
   let handler = Dom_html.handler (fun _ ->
+    print_endline (Printf.sprintf "se ended (%s)" (Js.to_string audio##.src));
     is_ended := true;
     audio##.currentTime := 0.;
     Js._false
