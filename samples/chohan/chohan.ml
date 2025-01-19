@@ -77,18 +77,6 @@ module GameMain : Scene.T = struct
     let style = create_style pt in
     let pos = (chohan.width / 3 * idx, (chohan.height - pt) / 2) in
     create ~context ~style ~pos ~base_horizontal: BHCenter id literals.dice_face.(number - 1)
-(*
-  let create_label context label text =
-    let open Entity.Renderable in
-    let open TextLabel in
-    let pt = 200 in
-    let style =
-      let font_face = Some "tamanegi" in
-      let outline = Edging (RGBA (0, 0, 0, 1.)) in
-      create_style ~font_face ~outline pt
-    in
-    let pos = (chohan.width / 2, (chohan.height - pt) / 2) in
-    create ~context ~style ~pos ~base_horizontal:BHCenter label text*)
 
   let create_popup_text label text =
     let pt = 200 in
@@ -276,17 +264,6 @@ module GameMain : Scene.T = struct
         label_win_updator
       | Lose (_a, _b) ->
         label_lose_updator
-        (*
-        let result_label = Condition.(has_id_r Id.win ||| has_id_r Id.lose) in
-        let* results_shown = exists result_label in
-        if results_shown then return ()
-        else
-          let label_win = create_label context Id.win literals.win in
-          let label_lose = create_label context Id.lose literals.lose in
-          let dice_l = create_dice context Id.dice_l a ~idx:1 in
-          let dice_r = create_dice context Id.dice_r b ~idx:2 in
-          let label_result = if is_win then label_win else label_lose in
-          spawn_r [dice_l; dice_r; label_result]*)
 end
 
 let _ =
