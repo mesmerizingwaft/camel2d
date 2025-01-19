@@ -77,7 +77,7 @@ module GameMain : Scene.T = struct
     let style = create_style pt in
     let pos = (chohan.width / 3 * idx, (chohan.height - pt) / 2) in
     create ~context ~style ~pos ~base_horizontal: BHCenter id literals.dice_face.(number - 1)
-
+(*
   let create_label context label text =
     let open Entity.Renderable in
     let open TextLabel in
@@ -88,19 +88,41 @@ module GameMain : Scene.T = struct
       create_style ~font_face ~outline pt
     in
     let pos = (chohan.width / 2, (chohan.height - pt) / 2) in
-    create ~context ~style ~pos ~base_horizontal:BHCenter label text
+    create ~context ~style ~pos ~base_horizontal:BHCenter label text*)
+
+  let create_popup_text label text =
+    let pt = 200 in
+    let style =
+      let open Entity.Renderable.TextLabel in
+      let font_face = Some "tamanegi" in
+      let outline = Edging (RGBA (0, 0, 0, 1.)) in
+      create_style ~font_face ~outline pt
+    in
+    let pos = (chohan.width / 2, (chohan.height - pt) / 2) in
+    let f t = (5 - t) * 10 in
+    PopupText.create
+      ~style
+      ~pos
+      ~f
+      ~base_horizontal:PopupText.BHCenter
+      label text
+
+  let label_win_init, label_win_updator = create_popup_text Id.win literals.win
+  let label_lose_init, label_lose_updator = create_popup_text Id.lose literals.lose
 
   (* Logic *)
   type hand = Cho | Han
   type phase =
     | Init
     | DiceRolling of hand * int
-    | End of hand * int * int
+    | Win of int * int
+    | Lose of int * int
 
   let str_of_phase = function
     | Init -> "Init"
     | DiceRolling _ -> "DiceRolling"
-    | End _ -> "End"
+    | Win _ -> "Win"
+    | Lose _ -> "Lose"
   
   let phase = ref Init
   let roll () = (Random.int 6) + 1
@@ -109,7 +131,8 @@ module GameMain : Scene.T = struct
     let open World in
     print_endline ("new_phase=" ^ str_of_phase new_phase)
     >> put_ref phase new_phase    
-
+  let check_win hand a b =
+    hand = Cho && (a + b) mod 2 = 0 || hand = Han && (a + b) mod 2 <> 0
   let use_phase = World.use_ref phase
 
   let initialize context =
@@ -181,6 +204,8 @@ module GameMain : Scene.T = struct
       button_cho; (RenderableUtils.hide button_cho_on_mousehover);
       button_han; (RenderableUtils.hide button_han_on_mousehover)
     ]
+    >> label_win_init context
+    >> label_lose_init context
 
   let handle_event _context ev =
     let open World in
@@ -217,7 +242,7 @@ module GameMain : Scene.T = struct
     match phase with
       | Init -> init_handler ev
       | DiceRolling _ -> return ()
-      | End _ -> final_handler ev
+      | Win _ | Lose _ -> final_handler ev
 
   let update context =
     let open World in
@@ -230,24 +255,38 @@ module GameMain : Scene.T = struct
         let dice_l = create_dice context Id.dice_l a ~idx:1 in
         let dice_r = create_dice context Id.dice_r b ~idx:2 in
         let* dice_exists = exists Condition.(has_id_r Id.dice_l ||| has_id_r Id.dice_r) in
-        let next_phase = if counter <= 60 then DiceRolling (hand, counter + 1) else End (hand, a, b) in
-        let replace_dice = replace_by_id_r Id.dice_l dice_l >> replace_by_id_r Id.dice_r dice_r in
+        let next_phase = if counter <= 60
+          then DiceRolling (hand, counter + 1)
+          else if check_win hand a b then Win (a, b)
+          else Lose (a, b)
+        in
+        let replace_dice =
+          replace_by_id_r Id.dice_l dice_l
+          >> replace_by_id_r Id.dice_r dice_r
+        in
         update_phase next_phase
-        >> if dice_exists then replace_dice else spawn_r [dice_l; dice_r]
-      | End (hand, a, b) ->
-        let is_win = hand = Cho && (a + b) mod 2 = 0 || hand = Han && (a + b) mod 2 <> 0 in
+        >> (if dice_exists then replace_dice else spawn_r [dice_l; dice_r])
+        >> (match next_phase with
+          | Win _ ->
+            stop_bgm Id.bgm2 >> play_bgm Id.se_win
+          | Lose _ ->
+            stop_bgm Id.bgm2 >> play_bgm Id.se_lose
+          | _ -> return ())
+      | Win (_a, _b) ->
+        label_win_updator
+      | Lose (_a, _b) ->
+        label_lose_updator
+        (*
         let result_label = Condition.(has_id_r Id.win ||| has_id_r Id.lose) in
         let* results_shown = exists result_label in
         if results_shown then return ()
         else
-          stop_bgm Id.bgm2
-          >> play_bgm (if is_win then Id.se_win else Id.se_lose)
-          >> let label_win = create_label context Id.win literals.win in
+          let label_win = create_label context Id.win literals.win in
           let label_lose = create_label context Id.lose literals.lose in
           let dice_l = create_dice context Id.dice_l a ~idx:1 in
           let dice_r = create_dice context Id.dice_r b ~idx:2 in
           let label_result = if is_win then label_win else label_lose in
-          spawn_r [dice_l; dice_r; label_result]
+          spawn_r [dice_l; dice_r; label_result]*)
 end
 
 let _ =

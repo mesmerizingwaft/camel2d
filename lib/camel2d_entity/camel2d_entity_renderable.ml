@@ -32,7 +32,13 @@ module TextLabel: sig
   type color = RGBA of int * int * int * float
   type outline = NoOutline | Edging of color
   type base_horizontal = BHCenter | BHLeft
-  type text_style
+  type text_style = {
+    pt: int;
+    color: color;
+    outline: outline;
+    font_face: string option;
+    letter_spacing: string;
+  }
 
   val create_style :
     ?color: color ->

@@ -101,6 +101,10 @@ module Condition = struct
   let is_in x y = Renderable (fun entity ->
     Camel2d_renderable_utils.is_in x y entity
   )
+
+  let visible = Renderable (fun entity ->
+    Camel2d_entity.Renderable.(entity.is_visible)
+  )
 end
 
 module Updator = struct
@@ -118,6 +122,17 @@ module Updator = struct
   let play = Playable Camel2d_entity.Playable.set_to_play
   let stop = Playable Camel2d_entity.Playable.set_to_stop
 end
+
+let id_of: type a. a Condition.t -> string t = function condition ->
+  match condition with
+    | Renderable c ->
+      let* renderables = get_renderables in
+      let e = List.find c renderables in
+      return e.id
+    | Playable c ->
+      let* playables = get_playables in
+      let e = List.find c playables in
+      return e.id
 
 let update_when: type a. a Condition.t -> a Updator.t -> unit t = fun condition updator ->
   let aux c f items = List.map (fun item -> if c item then f item else item) items in
@@ -167,3 +182,15 @@ let play_bgm id =
 
 let stop_bgm id =
   update_when Condition.(has_id_p id) Updator.stop
+
+let to_front id =
+  let* renderables = get_renderables in
+  let rec inner target = function
+    | [] when Option.is_none target -> raise Not_found
+    | [] -> [Option.get target]
+    | item::items when Camel2d_entity.Renderable.(item.id) = id ->
+      inner (Some item) items
+    | item::items ->
+      item::(inner target items)
+  in
+  put_renderables @@ inner None renderables

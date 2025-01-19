@@ -55,6 +55,7 @@ module Condition: sig
   val has_id_r : string -> Camel2d_entity.Renderable.t t
   val has_id_p : string -> Camel2d_entity.Playable.t t
   val is_in : int -> int -> Camel2d_entity.Renderable.t t
+  val visible : Camel2d_entity.Renderable.t t
 end
 
 module Updator: sig
@@ -67,6 +68,7 @@ module Updator: sig
   val stop : Camel2d_entity.Playable.t t
 end
 
+val id_of : 'a Condition.t -> string t
 val update_when : 'a Condition.t -> 'a Updator.t -> unit t
 val exists : 'a Condition.t -> bool t
 val spawn_r : Camel2d_entity.Renderable.t list -> unit t
@@ -80,3 +82,5 @@ val print_endline : string -> unit t
 
 val play_bgm : string -> unit t
 val stop_bgm : string -> unit t
+
+val to_front : string -> unit t
