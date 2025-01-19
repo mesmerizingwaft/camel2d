@@ -20,20 +20,21 @@ let _event_loop event_handler =
         >> inner ()
   in inner ()
 
+let _initializor initialize =
+  let is_initialized = ref false in fun context ->
+    if not !is_initialized then
+      let res = initialize context in
+      is_initialized := true;
+      res
+    else Camel2d_world.return ()
+
 let _load_new_scene context scenes name =
   let module S = (val Hashtbl.find scenes name : Scene.T) in
   let open Promise in
   Resource.Audio.stop_all ();
   Scene.load_resources context (module S) >>= fun bucket ->
   let state = World.new_state bucket in
-  let initializor =
-    let is_initialized = ref false in fun context ->
-    if not !is_initialized then
-      let res = S.initialize context in
-      is_initialized := true;
-      res
-    else Camel2d_world.return ()
-  in
+  let initializor = _initializor S.initialize in
   let updator = S.update in
   let event_handler = _event_loop S.handle_event in
   return (state, initializor, updator, event_handler)
