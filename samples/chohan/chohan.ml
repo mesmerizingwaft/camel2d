@@ -86,16 +86,21 @@ module GameMain : Scene.T = struct
     | Init
     | DiceRolling of hand * int
     | End of hand * int * int
+
+  let str_of_phase = function
+    | Init -> "Init"
+    | DiceRolling _ -> "DiceRolling"
+    | End _ -> "End"
+  
   let phase = ref Init
   let roll () = (Random.int 6) + 1
   let roll_twice () = (roll (), roll ())
   let update_phase new_phase =
-    phase := new_phase;
-    match new_phase with
-      | Init -> print_endline "new_phase=Init"
-      | DiceRolling _ -> print_endline "new_phase=DiceRolling"
-      | End _ -> print_endline "new_phase=End"
-    
+    let open World in
+    print_endline ("new_phase=" ^ str_of_phase new_phase)
+    >> put_ref phase new_phase    
+
+  let use_phase = World.use_ref phase
 
   let initialize context =
     let sw, sh = chohan.width, chohan.height in
@@ -148,10 +153,8 @@ module GameMain : Scene.T = struct
       create ~context ~style ~pos:((sw - 25 * 21) / 2, 20) Id.speech literals.speech
     in
     let open World in
-    let* _ = dbg_show_renderables in
-    print_endline "initialize!!!!";
-    update_phase Init;
-    spawn_p [bgm]
+    update_phase Init
+    >> spawn_p [bgm]
     >> spawn_r [
       bg;
       fg;
@@ -159,8 +162,6 @@ module GameMain : Scene.T = struct
       button_cho; (RenderableUtils.hide button_cho_on_mousehover);
       button_han; (RenderableUtils.hide button_han_on_mousehover)
     ]
-    >> let+ _ = dbg_show_renderables in
-    print_endline "the end of init"
 
   let handle_event _context ev =
     let open World in
@@ -176,45 +177,41 @@ module GameMain : Scene.T = struct
       | Event.MouseUp {x; y; _} ->
         let* cho_clicked = exists Condition.(has_id_r Id.button_cho &&& is_in x y) in
         let* han_clicked = exists Condition.(has_id_r Id.button_han &&& is_in x y) in
-        if cho_clicked then update_phase @@ DiceRolling(Cho, 0)
-        else if han_clicked then update_phase @@ DiceRolling(Han, 0);
-        if cho_clicked || han_clicked then
-          let is_button = Condition.(
-            any_of (List.map has_id_r Id.[button_cho; button_cho_mousehover; button_han; button_han_mousehover])
-          ) in
-          update_when is_button Updator.hide
-        else
-          return ()
+        let button_clicked = Condition.(lift_r cho_clicked ||| lift_r han_clicked) in
+        let is_button = Condition.(any_of (List.map has_id_r Id.[button_cho; button_cho_mousehover; button_han; button_han_mousehover])) in
+        let next_phase =
+          if cho_clicked then DiceRolling(Cho, 0)
+          else if han_clicked then DiceRolling(Han, 0)
+          else Init
+        in
+        update_phase next_phase
+        >> update_when Condition.(button_clicked &&& is_button) Updator.hide
       | _ -> return ()
     in
     let final_handler = function
       | Event.MouseUp _ -> start_scene "main"
       | _ -> return ()
     in
-    let* _ = dbg_show_renderables in
-    match !phase with
+    let* phase = use_phase in
+    match phase with
       | Init -> init_handler ev
       | DiceRolling _ -> return ()
       | End _ -> final_handler ev
 
   let update context =
     let open World in
-    let* _ = dbg_show_renderables in
-    match !phase with
+    let* phase = use_phase in
+    match phase with
       | Init -> return ()
       | DiceRolling (hand, counter) ->
         let a, b = roll_twice () in
         let dice_l = create_dice context Id.dice_l a ~idx:1 in
         let dice_r = create_dice context Id.dice_r b ~idx:2 in
-        if counter <= 60 then update_phase @@ DiceRolling (hand, counter + 1)
-        else update_phase @@ End (hand, a, b);
         let* dice_exists = exists Condition.(has_id_r Id.dice_l ||| has_id_r Id.dice_r) in
-        if dice_exists
-        then
-          replace_by_id_r Id.dice_l dice_l
-          >> replace_by_id_r Id.dice_r dice_r
-        else
-          spawn_r [dice_l; dice_r]
+        let next_phase = if counter <= 60 then DiceRolling (hand, counter + 1) else End (hand, a, b) in
+        let replace_dice = replace_by_id_r Id.dice_l dice_l >> replace_by_id_r Id.dice_r dice_r in
+        update_phase next_phase
+        >> if dice_exists then replace_dice else spawn_r [dice_l; dice_r]
       | End (hand, a, b) ->
         let* results_shown = exists Condition.(has_id_r Id.win ||| has_id_r Id.lose) in
         if results_shown then return ()

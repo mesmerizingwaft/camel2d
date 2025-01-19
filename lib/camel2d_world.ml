@@ -68,6 +68,9 @@ module Condition = struct
   let true_p = Playable (fun _ -> true)
   let false_r = Renderable (fun _ -> false)
   let false_p = Playable (fun _ -> false)
+
+  let lift_r b = if b then true_r else false_r
+
   let any_of_ bottom cs =
     let rec inner = function
       | [] -> bottom
@@ -138,3 +141,15 @@ let replace_by_id_r id new_entity =
 
 let replace_by_id_p id new_entity =
   update_when Condition.(has_id_p id) (Updator.replace_by_p new_entity)
+
+let use_ref r =
+  let* _ = return () in
+  return !r
+
+let put_ref r v =
+  let* _ = return () in
+  return (r := v)
+
+let print_endline msg =
+  let+ _ = return () in
+  print_endline msg

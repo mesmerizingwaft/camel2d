@@ -42,11 +42,9 @@ let _load_new_scene context scenes name =
 let render context =
   let open World in
   let* bucket = get_bucket in
-  let* renderables = get_renderables in
+  let+ renderables = get_renderables in
   Camel2d_context.cleanup_canvas context;
-  List.iter (Camel2d_entity.Renderable.render context bucket) renderables;
-  dbg_show_renderables
-  >> return ()
+  List.iter (Camel2d_entity.Renderable.render context bucket) renderables
 
 let play_se _context =
   let open World in

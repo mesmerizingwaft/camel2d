@@ -49,6 +49,7 @@ module Condition: sig
   val true_p : Camel2d_entity.Playable.t t
   val false_r : Camel2d_entity.Renderable.t t
   val false_p : Camel2d_entity.Playable.t t
+  val lift_r : bool -> Camel2d_entity.Renderable.t t
   val any_of : 'a. 'a t list -> 'a t
   val has_id_r : string -> Camel2d_entity.Renderable.t t
   val has_id_p : string -> Camel2d_entity.Playable.t t
@@ -69,3 +70,7 @@ val spawn_r : Camel2d_entity.Renderable.t list -> unit t
 val spawn_p : Camel2d_entity.Playable.t list -> unit t
 val replace_by_id_r : string -> Camel2d_entity.Renderable.t -> unit t
 val replace_by_id_p : string -> Camel2d_entity.Playable.t -> unit t
+
+val use_ref : 'a ref -> 'a t
+val put_ref : 'a ref -> 'a -> unit t
+val print_endline : string -> unit t
