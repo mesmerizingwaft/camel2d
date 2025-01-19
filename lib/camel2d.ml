@@ -25,9 +25,7 @@ let _load_new_scene context scenes name =
   let open Promise in
   Resource.Audio.stop_all ();
   Scene.load_resources context (module S) >>= fun bucket ->
-  let renderables = [] in
-  let playables = [] in
-  let state = World.create_state bucket renderables playables in
+  let state = World.new_state bucket in
   let initializor =
     let is_initialized = ref false in fun context ->
     if not !is_initialized then

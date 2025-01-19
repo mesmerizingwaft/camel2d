@@ -9,7 +9,9 @@ and state = {
   bucket: Camel2d_resource.bucket
 }
 
-let create_state bucket renderables playables =
+let new_state bucket =
+  let renderables = [] in
+  let playables = [] in
   {bucket; renderables; playables}
 
 let return a = fun state -> Continue (a, state)

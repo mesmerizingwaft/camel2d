@@ -5,11 +5,7 @@ type 'a next_scene =
   | Continue of 'a * state
 and state
 
-val create_state :
-  Camel2d_resource.bucket
-  -> Camel2d_entity.Renderable.t list
-  -> Camel2d_entity.Playable.t list
-  -> state
+val new_state : Camel2d_resource.bucket -> state
 
 val return : 'a -> 'a t
 val start_scene : string -> 'a t
