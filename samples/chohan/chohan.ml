@@ -1,5 +1,6 @@
 open Camel2d
 
+let _ = Random.self_init ()
 let chohan = Game.create ()
 
 module Literal = struct
@@ -25,13 +26,25 @@ end)
 
 module GameMain : Scene.T = struct
   module ResourceLabels = struct
-    let bgm = Resource.create_label "/samples/chohan/static/audio/bgm.mp3"
-    let img_root = "/samples/chohan/static/imgs/"
-    let bg = Resource.create_label @@ img_root ^ "bg.jpg"
-    let fg = Resource.create_label @@ img_root ^ "tsubofurishi.png"
+    open Resource
+    let bgm1 = gen_label ()
+    let bgm2 = gen_label ()
+    let bg = gen_label ()
+    let fg = gen_label ()
   end
 
-  (* Renderable IDs *)
+  let load_resources =
+    let open Resource in
+    let open ResourceLabels in
+    set_audio_root "/samples/chohan/static/audio/"
+    >> set_audio_mode BGM
+    >> load_audio bgm1 "bgm1.mp3"
+    >> load_audio bgm2 "bgm2.mp3"
+    >> set_image_root "/samples/chohan/static/imgs/"
+    >> load_image bg "bg.jpg"
+    >> load_image fg "tsubofurishi.png"
+
+  (* Entity IDs *)
   module Id = struct
     let bg = "bg"
     let fg = "fg"
@@ -76,15 +89,18 @@ module GameMain : Scene.T = struct
   let phase = ref Init
   let roll () = (Random.int 6) + 1
   let roll_twice () = (roll (), roll ())
-
-  let audios = [ ResourceLabels.bgm ]
-
-  let images = [ ResourceLabels.bg; ResourceLabels.fg ]
+  let update_phase new_phase =
+    phase := new_phase;
+    match new_phase with
+      | Init -> print_endline "new_phase=Init"
+      | DiceRolling _ -> print_endline "new_phase=DiceRolling"
+      | End _ -> print_endline "new_phase=End"
+    
 
   let initialize context =
     let sw, sh = chohan.width, chohan.height in
     let bgm = Entity.Playable.(
-      create "bgm" ResourceLabels.bgm |> set_to_play
+      create "bgm" ResourceLabels.bgm1 |> set_to_play
     ) in
     let bg, fg =
       let open Entity.Renderable in
@@ -131,32 +147,42 @@ module GameMain : Scene.T = struct
       in
       create ~context ~style ~pos:((sw - 25 * 21) / 2, 20) Id.speech literals.speech
     in
-    Random.self_init ();
-    phase := Init;
-    Entity.[
-      P bgm;
-      R bg; R fg;
-      R speech;
-      R button_cho; R (RenderableUtils.hide button_cho_on_mousehover);
-      R button_han; R (RenderableUtils.hide button_han_on_mousehover)
+    let open World in
+    let* _ = dbg_show_renderables in
+    print_endline "initialize!!!!";
+    update_phase Init;
+    spawn_p [bgm]
+    >> spawn_r [
+      bg;
+      fg;
+      speech;
+      button_cho; (RenderableUtils.hide button_cho_on_mousehover);
+      button_han; (RenderableUtils.hide button_han_on_mousehover)
     ]
+    >> let+ _ = dbg_show_renderables in
+    print_endline "the end of init"
 
   let handle_event _context ev =
     let open World in
     let init_handler = function
       | Event.MouseMove {x; y} ->
-        update_when Condition.((has_id Id.button_cho) ||| (has_id Id.button_han)) Updator.show
-        >> update_when Condition.((has_id Id.button_cho_mousehover) ||| (has_id Id.button_han_mousehover)) Updator.hide
-        >> update_when Condition.(((has_id Id.button_cho) ||| (has_id Id.button_han)) &&& (is_in x y)) Updator.hide
-        >> update_when Condition.(((has_id Id.button_cho_mousehover) ||| (has_id Id.button_han_mousehover)) &&& (is_in x y)) Updator.show
+        let is_button_default = Condition.((has_id_r Id.button_cho) ||| (has_id_r Id.button_han)) in
+        let is_button_4_hover = Condition.((has_id_r Id.button_cho_mousehover) ||| (has_id_r Id.button_han_mousehover)) in
+        let is_mouse_on = Condition.is_in x y in
+        update_when is_button_default Updator.show
+        >> update_when is_button_4_hover Updator.hide
+        >> update_when Condition.(is_button_default &&& is_mouse_on) Updator.hide
+        >> update_when Condition.(is_button_4_hover &&& is_mouse_on) Updator.show
       | Event.MouseUp {x; y; _} ->
-        let* cho_clicked = exists Condition.(has_id "button_cho" &&& is_in x y) in
-        let* han_clicked = exists Condition.(has_id "button_han" &&& is_in x y) in
-        if cho_clicked then phase := DiceRolling(Cho, 0)
-        else if han_clicked then phase := DiceRolling(Han, 0);
-        if !phase <> Init then
-          update_when Condition.((has_id Id.button_cho) ||| (has_id Id.button_cho_mousehover)
-          ||| (has_id Id.button_han) ||| (has_id Id.button_han_mousehover)) Updator.hide
+        let* cho_clicked = exists Condition.(has_id_r Id.button_cho &&& is_in x y) in
+        let* han_clicked = exists Condition.(has_id_r Id.button_han &&& is_in x y) in
+        if cho_clicked then update_phase @@ DiceRolling(Cho, 0)
+        else if han_clicked then update_phase @@ DiceRolling(Han, 0);
+        if cho_clicked || han_clicked then
+          let is_button = Condition.(
+            any_of (List.map has_id_r Id.[button_cho; button_cho_mousehover; button_han; button_han_mousehover])
+          ) in
+          update_when is_button Updator.hide
         else
           return ()
       | _ -> return ()
@@ -165,6 +191,7 @@ module GameMain : Scene.T = struct
       | Event.MouseUp _ -> start_scene "main"
       | _ -> return ()
     in
+    let* _ = dbg_show_renderables in
     match !phase with
       | Init -> init_handler ev
       | DiceRolling _ -> return ()
@@ -172,23 +199,24 @@ module GameMain : Scene.T = struct
 
   let update context =
     let open World in
+    let* _ = dbg_show_renderables in
     match !phase with
       | Init -> return ()
       | DiceRolling (hand, counter) ->
         let a, b = roll_twice () in
         let dice_l = create_dice context Id.dice_l a ~idx:1 in
         let dice_r = create_dice context Id.dice_r b ~idx:2 in
-        if counter <= 60 then phase := DiceRolling (hand, counter + 1)
-        else phase := End (hand, a, b);
-        let* dice_exists = exists Condition.(has_id Id.dice_l ||| has_id Id.dice_r) in
+        if counter <= 60 then update_phase @@ DiceRolling (hand, counter + 1)
+        else update_phase @@ End (hand, a, b);
+        let* dice_exists = exists Condition.(has_id_r Id.dice_l ||| has_id_r Id.dice_r) in
         if dice_exists
         then
-          replace_by_id Id.dice_l Entity.(R dice_l)
-          >> replace_by_id Id.dice_r Entity.(R dice_r)
+          replace_by_id_r Id.dice_l dice_l
+          >> replace_by_id_r Id.dice_r dice_r
         else
-          spawn Entity.[R dice_l; R dice_r]
+          spawn_r [dice_l; dice_r]
       | End (hand, a, b) ->
-        let* results_shown = exists Condition.(has_id Id.win ||| has_id Id.lose) in
+        let* results_shown = exists Condition.(has_id_r Id.win ||| has_id_r Id.lose) in
         if results_shown then return ()
         else
           let label_win = create_label context Id.win literals.win in
@@ -201,7 +229,7 @@ module GameMain : Scene.T = struct
             then label_win
             else label_lose
           in
-          spawn Entity.[R dice_l; R dice_r; R result]
+          spawn_r [dice_l; dice_r; result]
 end
 
 let _ =

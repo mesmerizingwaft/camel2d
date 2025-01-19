@@ -4,11 +4,13 @@ and 'a next_scene =
   | NewScene of string
   | Continue of 'a * state
 and state = {
-  entities: Camel2d_entity.t list;
+  renderables: Camel2d_entity.Renderable.t list;
+  playables: Camel2d_entity.Playable.t list;
   bucket: Camel2d_resource.bucket
 }
 
-let create_state bucket entities = {bucket; entities}
+let create_state bucket renderables playables =
+  {bucket; renderables; playables}
 
 let return a = fun state -> Continue (a, state)
 let start_scene name = fun _ -> NewScene name
@@ -26,66 +28,111 @@ let (>>) t1 t2 = let* _ = t1 in t2
 let get = fun state -> Continue (state, state)
 let put state = fun _ -> Continue ((), state)
 
-let get_entities = let* {entities; _} = get in return entities
-let get_bucket = let* {bucket; _} = get in return bucket
-let get_renderables = let+ entities = get_entities in Camel2d_entity.renderables_of entities
-let get_playables = let+ entities = get_entities in Camel2d_entity.playables_of entities
+let get_bucket = let+ {bucket; _} = get in bucket
+let get_renderables = let+ {renderables; _} = get in renderables
+let get_playables = let+ {playables; _} = get in playables
 
-let put_entities entities = let* state = get in
-  put {state with entities}
-let put_bucket bucket = let* state = get in
-  put {state with bucket}
-let put_renderables renderables = let* state = get in
-  let p e = Camel2d_entity.P e in
-  let r e = Camel2d_entity.R e in
-  let entities = Camel2d_entity.playables_of state.entities in
-  let entities = (List.map p entities) @ (List.map r renderables) in
-  put {state with entities}
-let put_playables playables = let* state = get in
-  let p e = Camel2d_entity.P e in
-  let r e = Camel2d_entity.R e in
-  let entities = Camel2d_entity.renderables_of state.entities in
-  let entities = (List.map r entities) @ (List.map p playables) in
-  put {state with entities}
+(*
+let put_bucket bucket = let* state = get in put {state with bucket}
+*)
+let put_renderables renderables = let* state = get in put {state with renderables}
+let put_playables playables = let* state = get in put {state with playables}
+
+let dbg_show_renderables =
+  let id_of r = Camel2d_entity.Renderable.(r.id) in
+  let+ renderables = get_renderables in
+  let ids = List.map id_of renderables in
+  print_endline @@ Printf.sprintf "[%s]" (String.concat ";" ids)
 
 module Condition = struct
-  type t = Camel2d_entity.t -> bool
-  let (&&&) c1 c2 entity = c1 entity && c2 entity
-  let (|||) c1 c2 entity = c1 entity || c2 entity
-  let has_id target_id entity =
-    match entity with
-      | Camel2d_entity.R r -> Camel2d_renderable_utils.has_id target_id r
-      | _ -> false
-  let is_in x y entity =
-    match entity with
-      | Camel2d_entity.R r -> Camel2d_renderable_utils.is_in x y r
-      | _ -> false
+  type r = Camel2d_entity.Renderable.t
+  type p = Camel2d_entity.Playable.t
+
+  type _ t =
+    | Renderable : (r -> bool) -> r t
+    | Playable : (p -> bool) -> p t
+
+    
+  let con_op : type a. (bool -> bool -> bool) -> a t -> a t -> a t = fun op c1 c2 ->
+    let aux c1 c2 entity = op (c1 entity) (c2 entity) in
+    match c1, c2 with
+      | Renderable c1', Renderable c2' -> Renderable (aux c1' c2')
+      | Playable c1', Playable c2' -> Playable (aux c1' c2')
+
+  let (&&&) c1 c2 = con_op (&&) c1 c2
+  let (|||) c1 c2 = con_op (||) c1 c2
+
+  let true_r = Renderable (fun _ -> true)
+  let true_p = Playable (fun _ -> true)
+  let false_r = Renderable (fun _ -> false)
+  let false_p = Playable (fun _ -> false)
+  let any_of_ bottom cs =
+    let rec inner = function
+      | [] -> bottom
+      | c::cs -> c ||| inner cs
+    in inner cs    
+  let any_of_r cs = any_of_ false_r cs
+  let any_of_p cs = any_of_ false_p cs
+  let any_of : type a. a t list -> a t = fun cs ->
+    match cs with
+      | [] -> assert false
+      | (Renderable _)::_ -> any_of_r cs
+      | (Playable _)::_ -> any_of_p cs
+
+  let has_id_r id = Renderable (fun entity ->
+    Camel2d_renderable_utils.has_id id entity
+  )
+
+  let has_id_p id = Playable (fun entity ->
+    entity.id == id
+  )
+
+  let is_in x y = Renderable (fun entity ->
+    Camel2d_renderable_utils.is_in x y entity
+  )
 end
 
 module Updator = struct
-  type t = Camel2d_entity.t -> Camel2d_entity.t
-  let apply_if_renderable f = function
-      | Camel2d_entity.R r -> Camel2d_entity.R (f r)
-      | entity -> entity
+  type r = Camel2d_entity.Renderable.t
+  type p = Camel2d_entity.Playable.t
 
-  let show = apply_if_renderable Camel2d_renderable_utils.show
-  let hide = apply_if_renderable Camel2d_renderable_utils.hide
-  let replace_by entity _ = entity
+  type _ t =
+    | Renderable : (r -> r) -> r t
+    | Playable : (p -> p) -> p t
+
+  let show = Renderable Camel2d_renderable_utils.show
+  let hide = Renderable Camel2d_renderable_utils.hide
+  let replace_by_r entity = Renderable (fun _ -> entity)
+  let replace_by_p entity = Playable (fun _ -> entity)
 end
 
-let update_when condition f =
-  let* entities = get_entities in
-  let entities = 
-    List.map (fun entity -> if condition entity then f entity else entity) entities in
-  put_entities entities
+let update_when: type a. a Condition.t -> a Updator.t -> unit t = fun condition updator ->
+  let aux c f items = List.map (fun item -> if c item then f item else item) items in
+  match condition, updator with
+    | Renderable c, Renderable f ->
+      let* renderables = get_renderables in
+      aux c f renderables |> put_renderables
+    | Playable c, Playable f ->
+      let* playables = get_playables in
+      aux c f playables |> put_playables
 
-let exists condition =
-  let* entities = get_entities in
-  return (List.exists condition entities)
+let exists: type a. a Condition.t -> bool t = fun condition ->
+  match condition with
+    | Renderable c -> let+ renderables = get_renderables in
+      List.exists c renderables
+    | Playable c -> let+ playables = get_playables in
+      List.exists c playables
 
-let spawn new_entities =
-  let* entities = get_entities in
-  put_entities (entities @ new_entities)
+let spawn_r new_renderables =
+  let* renderables = get_renderables in
+  put_renderables (renderables @ new_renderables)
 
-let replace_by_id id new_entity =
-  update_when Condition.(has_id id) (Updator.replace_by new_entity)
+let spawn_p new_playables =
+  let* playables = get_playables in
+  put_playables (playables @ new_playables)
+
+let replace_by_id_r id new_entity =
+  update_when Condition.(has_id_r id) (Updator.replace_by_r new_entity)
+
+let replace_by_id_p id new_entity =
+  update_when Condition.(has_id_p id) (Updator.replace_by_p new_entity)

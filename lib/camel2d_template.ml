@@ -5,8 +5,8 @@ module SimpleAgreement4BGM = struct
     val message: string
     val pt: int
   end) : Camel2d_scene.T = struct
-    let audios = []
-    let images = []
+    let load_resources = Camel2d_resource.return ()
+    
     let initialize context =
       let message =
         let open Camel2d_entity.Renderable in
@@ -18,7 +18,8 @@ module SimpleAgreement4BGM = struct
         let pos = (Params.game.width / 2, (Params.game.height - Params.pt) / 2) in
         create ~context ~style ~pos ~base_horizontal:BHCenter "message" Params.message
       in
-      Camel2d_entity.[R message]
+      let open Camel2d_world in
+      spawn_r [message]
   
     let handle_event context ev =
       let open Camel2d_world in

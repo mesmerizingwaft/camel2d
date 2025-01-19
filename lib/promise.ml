@@ -70,6 +70,7 @@ let (>>=) (m: 'a promise) (f: 'a -> 'b promise): 'b promise =
       enqueue (handler_of_callback f output_resolver) m;
       output_promise
 
+let (let*) t f = t >>= f
 
 let rec join (ps: unit promise list): unit promise =
   match ps with

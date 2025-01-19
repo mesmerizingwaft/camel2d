@@ -1,22 +1,24 @@
-type t
+
+module Image = Camel2d_resource_image
+module Audio = Camel2d_resource_audio
+
 type label
 type bucket
+type audio_mode = SE | BGM
+type 'a factory
 
-type context = Camel2d_context.t
+val gen_label : unit -> label
 
-val create_bucket : unit -> bucket
-val create_label : string -> label
-val load : bucket:bucket -> label:label -> t -> unit Promise.promise
+val return : 'a -> 'a factory
+val bind : 'a factory -> f:('a -> 'b factory) -> 'b factory
+val (let*) : 'a factory -> ('a -> 'b factory) -> 'b factory
+val (>>) : 'a factory -> 'b factory -> 'b factory
 
-module Image : sig
-  val load : label -> t Promise.promise
-  val render : bucket -> label -> context -> x:int -> y:int -> w:int -> h:int -> unit
-end
-
-module Audio : sig
-  val resume : context -> unit
-  val load : context: context -> ?is_loop:bool -> label -> t Promise.promise
-  val play : bucket -> label -> unit
-  val stop : bucket -> label -> unit
-  val stop_all : unit -> unit
-end
+val set_image_root : string -> unit factory
+val set_audio_root : string -> unit factory
+val set_audio_mode : audio_mode -> unit factory
+val load_image : label -> string -> unit factory
+val load_audio : label -> string -> unit factory
+val run : Camel2d_context.t -> unit factory -> bucket Promise.promise
+val fetch_image : bucket -> label -> Image.t
+val fetch_audio : bucket -> label -> Audio.t

@@ -1,87 +1,83 @@
-open Ext
-open Js_of_ocaml
+module Image = Camel2d_resource_image
+module Audio = Camel2d_resource_audio
 
-type context = Camel2d_context.t
+type label = int
 
-type t =
-  | Image of Dom_html.imageElement Js.t
-  | Audio of Dom_html.audioElement Js.t
+let gen_label =
+  let cnt = ref Int.min_int in
+  fun () -> cnt := !cnt + 1; !cnt
 
-type label = string
+type bucket = {
+  images: (label, Image.t) Hashtbl.t;
+  audios: (label, Audio.t) Hashtbl.t;
+}
 
-let create_label name = name
+type audio_mode = SE | BGM
+type request = {
+  image_root: string;
+  image_requests: (label * string) list;
+  audio_root: string;
+  audio_mode: audio_mode;
+  audio_requests: (label * string * bool) list;
+}
+type 'a factory = request -> 'a * request
 
-type bucket = (label, t) Hashtbl.t
+let return a = fun request -> (a, request)
+let bind t ~f = fun request ->
+  let a, request = t request in
+  f a request
+let (let*) t f = bind t ~f
+let (>>) t1 t2 = let* _ = t1 in t2
 
-let create_bucket () : bucket = Hashtbl.create 10
-let fetch (bucket: bucket) name = Hashtbl.find bucket name
-let load ~bucket ~label t =
-  let _ = Hashtbl.add bucket label t in
-  Promise.return ()
+let get = fun request -> (request, request)
+let put request = fun _ -> ((), request)
 
-module Image = struct
-  let load src =
-    let img = Dom_html.createImg Dom_html.document in
-    let promise, resolver = Promise.make () in
-    img##.src := Js.string src;
-    img##.onload := Dom_html.handler (fun _ ->
-      Promise.resolve resolver (Image img);
-      Js._false
-    );
-    promise
+let set_image_root path =
+  let* request = get in
+  put {request with image_root = path}
 
-  let render bucket label context ~x ~y ~w ~h =
-    match fetch bucket label with
-      | Audio _ ->
-        failwith @@ Printf.sprintf "resource [%s] is not renderable" label
-      | Image img ->
-        let ctx = Camel2d_context.get_context2d context in
-        let x, y, w, h = float_of_int x, float_of_int y, float_of_int w, float_of_int h in
-        ctx##drawImage_withSize img x y w h
-end
+let set_audio_root path =
+  let* request = get in
+  put {request with audio_root = path}
 
-module Audio = struct
-  let _buff = ref []
+let set_audio_mode mode =
+  let* request = get in
+  put {request with audio_mode = mode}
 
-  let resume (context: Camel2d_context.t) =
-    context.audio_context##resume
+let load_image name path =
+  let* request = get in
+  let path = request.image_root ^ path in
+  let image_requests = (name, path) :: request.image_requests in
+  put {request with image_requests}
 
-  let load ~(context:context) ?(is_loop=true) path =
-    let audio_context = context.audio_context in
-    let e = Dom_html.(createAudio document) in
-    _buff := e::!_buff;
-    e##.src := Js.string path;
-    e##.loop := Js.bool is_loop;
-    let promise, resolver = Promise.make () in
-    Dom_html.addEventListener e Dom_html.Event.loadstart (Dom_html.handler (fun _ ->
-      let source = audio_context##createMediaElementSource e in
-      source##connect (audio_context##.destination :> audioNode Js.t);
-      Promise.resolve resolver (Audio e);
-      Js._false
-    )) Js._false |> ignore;
-    promise
+let load_audio name path =
+  let* request = get in
+  let path = request.audio_root ^ path in
+  let loop = if request.audio_mode = BGM then true else false in
+  let audio_requests = (name, path, loop) :: request.audio_requests in
+  put {request with audio_requests}
 
-  let play bucket label =
-    match fetch bucket label with
-      | Image _ ->
-        failwith @@ Printf.sprintf "resource [%s] is not playable" label
-      | Audio audio ->
-        ignore @@ audio##play
+let run context t =
+  let init = {
+    image_root="";
+    image_requests=[];
+    audio_root="";
+    audio_mode=BGM;
+    audio_requests=[]
+  } in
+  let (), {image_requests; audio_requests; _} = t init in
+  let open Promise in
+  let load_img (name, path) =
+    let* img = Image.load path in return (name, img) in
+  let load_audio (name, path, is_loop) =
+    let* audio = Audio.load ~context ~is_loop path in return (name, audio) in
+  let* images = List.sequence @@ List.map load_img image_requests in
+  let* audios  = List.sequence @@ List.map load_audio audio_requests in
+  let image_bucket = Hashtbl.create 10 in
+  let audio_bucket = Hashtbl.create 10 in
+  List.iter (fun (name, img) -> Hashtbl.add image_bucket name img) images;
+  List.iter (fun (name, audio) -> Hashtbl.add audio_bucket name audio) audios;
+  return { images = image_bucket; audios = audio_bucket }
 
-  let stop bucket label =
-    match fetch bucket label with
-    | Image _ ->
-      failwith @@ Printf.sprintf "resource [%s] is not playable" label
-    | Audio audio ->
-      ignore @@ audio##pause;
-      audio##.currentTime := 0.
-
-  let stop_all () =
-    let stop node =
-      let node = Js.Unsafe.coerce node in
-      ignore @@ node##pause;
-      node##.currentTime := 0.
-    in
-    List.iter stop !_buff;
-    _buff := []
-end
+let fetch_image bucket name = Hashtbl.find bucket.images name
+let fetch_audio bucket name = Hashtbl.find bucket.audios name

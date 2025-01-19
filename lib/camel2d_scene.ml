@@ -1,50 +1,19 @@
 type 'a world = 'a Camel2d_world.t
 type context = Camel2d_context.t
 type bucket = Camel2d_resource.bucket
-type entity = Camel2d_entity.t
 type event = Camel2d_event.t
 type label = Camel2d_resource.label
+type 'a factory = 'a Camel2d_resource.factory
 
 module type T = sig
-  val images : label list
-  val audios : label list
-  val initialize : context -> entity list
+  val load_resources : unit factory
+  val initialize : context -> unit world
   val update : context -> unit world
   val handle_event : context -> event -> unit world
 end
 
-let load_images bucket (module Scene: T) =
-  let open Camel2d_resource in
-  Scene.images
-  |> List.map (fun label ->
-    Promise.(Image.load label >>= load ~bucket ~label))
-  |> Promise.join
-
-let load_audios context bucket (module Scene: T) =
-  let open Camel2d_resource in
-  Scene.audios
-  |> List.map (fun label ->
-    Promise.(Audio.load ~context label >>= load ~bucket ~label))
-  |> Promise.join
-
-let load_resources context (module Scene: T) =
+let load_resources context (module Scene : T) =
   let open Promise in
-  let bucket = Camel2d_resource.create_bucket () in
-  load_images bucket (module Scene) >>= fun _ ->
-  load_audios context bucket (module Scene) >>= fun _ ->
+  let* bucket = Camel2d_resource.run context Scene.load_resources in
   Camel2d_event.clear ();
   return bucket
-
-(*
-let start context (module Scene: T) =
-  let open Promise in
-  let bucket = Camel2d_resource.create_bucket () in
-  load_images bucket (module Scene) >>= fun _ ->
-  load_audios context bucket (module Scene) >>= fun _ ->
-  Camel2d_event.clear ();
-  return Camel2d_world.(
-    put_bucket bucket
-    >> put_entities (Scene.initialize context)
-    >> put_event_handler Scene.handle_event
-    >> put_updator Scene.update
-  )*)

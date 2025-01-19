@@ -3,12 +3,13 @@ type 'a t
 type 'a next_scene =
   | NewScene of string
   | Continue of 'a * state
-and state = {
-    entities: Camel2d_entity.t list;
-    bucket: Camel2d_resource.bucket
-}
+and state
 
-val create_state : Camel2d_resource.bucket -> Camel2d_entity.t list -> state
+val create_state :
+  Camel2d_resource.bucket
+  -> Camel2d_entity.Renderable.t list
+  -> Camel2d_entity.Playable.t list
+  -> state
 
 val return : 'a -> 'a t
 val start_scene : string -> 'a t
@@ -20,35 +21,55 @@ val (let*) : 'a t -> ('a -> 'b t) -> 'b t
 val (let+) : 'a t -> ('a -> 'b) -> 'b t
 val (>>) : 'a t -> 'b t -> 'b t
 
+val get_bucket: Camel2d_resource.bucket t
+val get_renderables : (Camel2d_entity.Renderable.t list) t
+val get_playables : (Camel2d_entity.Playable.t list) t
+
+val put_playables : Camel2d_entity.Playable.t list -> unit t
+
+val dbg_show_renderables : unit t
+
+(*
+
 val get : state t
 val put : state -> unit t
-
+*)
+(*
 val get_entities: (Camel2d_entity.t list) t
-val get_bucket: Camel2d_resource.bucket t
-val get_renderables : (Camel2d_renderable.t list) t
-val get_playables : (Camel2d_playable.t list) t
+
+
 
 val put_entities: Camel2d_entity.t list -> unit t
 val put_bucket: Camel2d_resource.bucket -> unit t
 val put_renderables : Camel2d_renderable.t list -> unit t
-val put_playables : Camel2d_playable.t list -> unit t
+
+*)
 
 module Condition: sig
-  type t
-  val (&&&) : t -> t -> t
-  val (|||) : t -> t -> t
-  val has_id : string -> t
-  val is_in : int -> int -> t
+  type 'a t
+  val (&&&) : 'a. 'a t -> 'a t -> 'a t
+  val (|||) : 'a. 'a t -> 'a t -> 'a t
+  val true_r : Camel2d_entity.Renderable.t t
+  val true_p : Camel2d_entity.Playable.t t
+  val false_r : Camel2d_entity.Renderable.t t
+  val false_p : Camel2d_entity.Playable.t t
+  val any_of : 'a. 'a t list -> 'a t
+  val has_id_r : string -> Camel2d_entity.Renderable.t t
+  val has_id_p : string -> Camel2d_entity.Playable.t t
+  val is_in : int -> int -> Camel2d_entity.Renderable.t t
 end
 
 module Updator: sig
-  type t
-  val show : t
-  val hide : t
-  val replace_by : Camel2d_entity.t -> t
+  type 'a t
+  val show : Camel2d_entity.Renderable.t t
+  val hide : Camel2d_entity.Renderable.t t
+  val replace_by_r : Camel2d_entity.Renderable.t -> Camel2d_entity_renderable.t t
+  val replace_by_p : Camel2d_entity.Playable.t -> Camel2d_entity_playable.t t
 end
 
-val update_when : Condition.t -> Updator.t -> unit t
-val exists : Condition.t -> bool t
-val spawn : Camel2d_entity.t list -> unit t
-val replace_by_id : string -> Camel2d_entity.t -> unit t
+val update_when : 'a Condition.t -> 'a Updator.t -> unit t
+val exists : 'a Condition.t -> bool t
+val spawn_r : Camel2d_entity.Renderable.t list -> unit t
+val spawn_p : Camel2d_entity.Playable.t list -> unit t
+val replace_by_id_r : string -> Camel2d_entity.Renderable.t -> unit t
+val replace_by_id_p : string -> Camel2d_entity.Playable.t -> unit t

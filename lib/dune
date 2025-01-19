@@ -3,3 +3,4 @@
  (name camel2d)
  (libraries js_of_ocaml uutf)
  (preprocess (pps js_of_ocaml-ppx)))
+(include_subdirs unqualified)

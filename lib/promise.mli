@@ -7,6 +7,7 @@ val state : 'a promise -> 'a state
 val resolve : 'a resolver -> 'a -> unit
 val reject : 'a resolver -> exn -> unit
 val (>>=) : 'a promise -> ('a -> 'b promise) -> 'b promise
+val (let*) : 'a promise -> ('a -> 'b promise) -> 'b promise
 val run : 'a promise -> 'a
 val join : unit promise list -> unit promise
 val ignore: 'a promise -> unit promise

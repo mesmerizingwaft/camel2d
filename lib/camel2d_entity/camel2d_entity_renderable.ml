@@ -3,7 +3,7 @@ open Js_of_ocaml
 type context = Camel2d_context.t
 type resource_bucket = Camel2d_resource.bucket
 
-type t = Renderable : {
+type t = {
   id: string;
   render: t -> context -> resource_bucket -> unit;
   is_visible: bool;
@@ -11,20 +11,21 @@ type t = Renderable : {
   y: int;
   w: int;
   h: int;
-} -> t
+}
 
-let render context resource_bucket ((Renderable {render; _}) as t) =
+let render context resource_bucket ({render; _} as t) =
   render t context resource_bucket
 
 module SingleImage = struct
   let create ~pos ~size ?(is_visible=true) id resource_name =
     let (x, y), (w, h) = pos, size in
-    let render (Renderable {x; y; w; h; is_visible; _}) context bucket =
+    let render {x; y; w; h; is_visible; _} context bucket =
       if is_visible then begin
-        Camel2d_resource.Image.render bucket resource_name context ~x ~y ~w ~h
+        let img = Camel2d_resource.fetch_image bucket resource_name in
+        Camel2d_resource.Image.render img context ~x ~y ~w ~h
       end
     in
-    Renderable { id; render; is_visible; x; y; w; h }
+    { id; render; is_visible; x; y; w; h }
 end
 
 module TextLabel: sig
@@ -102,7 +103,7 @@ end = struct
   let create ~context ~style ~pos ?(is_visible=true) ?(base_horizontal=BHLeft) id text =
     let (x, y) = pos in
     let (w, h) = text_width_of ~context ~style text, style.pt in
-    let render (Renderable {x; y; is_visible; _}) context _ =
+    let render {x; y; is_visible; _} context _ =
       if is_visible then begin
         _with_style style context (fun ctx ->
           let x = if base_horizontal = BHCenter
@@ -115,7 +116,7 @@ end = struct
         )
       end
     in
-    Renderable { id; render; is_visible; x; y; w; h }
+    { id; render; is_visible; x; y; w; h }
 end
 
 let create_from_text
@@ -127,7 +128,7 @@ let create_from_text
   ?(base_horizontal=`Left)
   ~pt ~pos ~size id text =
   let (x, y), (w, h) = pos, size in
-  let render (Renderable {x; y; is_visible; _}) context _ =
+  let render {x; y; is_visible; _} context _ =
     if is_visible then begin
       let ctx = Camel2d_context.get_context2d context in
       ctx##save;
@@ -159,4 +160,4 @@ let create_from_text
       ctx##restore
     end
   in
-  Renderable { id; render; is_visible; x; y; w; h }
+  { id; render; is_visible; x; y; w; h }
