@@ -1,11 +1,18 @@
 name: test-sample-availability
-on: [push]
+
+on:
+  - push
+
+permissions: read-all
+
 jobs:
   setup-prerequisites:
+    strategy:
+      fail-fast: false
     runs-on: ubuntu-latest
     steps:
-    - uses: ocaml/setup-ocaml@v2.2.9
-      with:
-        ocaml-compiler: 5.1.1
+      - uses: ocaml/setup-ocaml@v2.2.9
+        with:
+          ocaml-compiler: 5.1.1
   
   
