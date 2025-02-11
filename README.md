@@ -16,9 +16,43 @@ module InitialScene : Scene.T = struct
 end
 
 module GameMain : Scene.T = struct
-    let load_resources = ...
-    let initialize context = ...
-    let handle_event context ev = ...
+    module ResourceLabels = struct
+        open Resource
+        let bgm1 = gen_label ()
+        let bg = gen_label ()
+    end
+    let load_resources =
+        let open Resource in
+        let open ResourceLabels in
+        set_audio_root "/static/audio/"
+        >> set_audio_mode BGM
+        >> load_audio bgm1 "bgm1.mp3"
+        >> set_image_root "/static/imgs/"
+        >> load_image bg "bg.jpg"
+
+    let initialize context =
+        let sw, sh = your_game.width, your_game.height in
+        let bgm1 = Entity.Playable.(
+            create "bgm" ResourceLabels.bgm1 |> set_to_play
+        ) in
+        let bg =
+            let open Entity.Renderable in
+            SingleImage.create
+                "bg"
+                ResourceLabels.bg
+                ~pos:(0,0)
+                ~size:(sw, sh)
+        in
+        let open World in
+        spawn_p [bgm1]
+        >> spawn_r [bg]
+
+    let handle_event context ev =
+        let open World in
+        match ev with
+            | Event.MouseUp _ -> start_scene "init"
+            | _ -> return ()
+
     let update context = ...
 end
 

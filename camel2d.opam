@@ -14,6 +14,9 @@ depends: [
   "uutf"
   "js_of_ocaml"
   "yojson"
+  "ppx_deriving_yojson"
+  "ppx_blob"
+  "js_of_ocaml-ppx"
   "odoc" {with-doc}
 ]
 build: [

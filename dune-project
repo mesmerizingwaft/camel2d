@@ -23,6 +23,9 @@
     ocaml
     uutf
     js_of_ocaml
-    yojson))
+    yojson
+    ppx_deriving_yojson
+    ppx_blob
+    js_of_ocaml-ppx))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/reference/dune-project/index.html
