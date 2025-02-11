@@ -1,5 +1,7 @@
 # camel2d
 
+[![test-sample-availability](https://github.com/mesmerizingwaft/camel2d/actions/workflows/main.yml/badge.svg)](https://github.com/mesmerizingwaft/camel2d/actions/workflows/main.yml)
+
 ## How to run the sample projects
 
 ```bash
