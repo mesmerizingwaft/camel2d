@@ -1,0 +1,10 @@
+name: test-sample-availability
+on: [push]
+jobs:
+  setup-prerequisites:
+    - runs-on: ubuntu-latest
+    - uses: ocaml/setup-ocaml@v2.2.9
+      with:
+        ocaml-compiler: 5.1.1
+  
+  
