@@ -1,6 +1,6 @@
 # camel2d
 
-[![test-sample-availability](https://github.com/mesmerizingwaft/camel2d/actions/workflows/main.yml/badge.svg)](https://github.com/mesmerizingwaft/camel2d/actions/workflows/main.yml)
+[![build](https://github.com/mesmerizingwaft/camel2d/actions/workflows/main.yml/badge.svg)](https://github.com/mesmerizingwaft/camel2d/actions/workflows/main.yml)
 
 ## Usage
 
