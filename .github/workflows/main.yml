@@ -1,4 +1,4 @@
-name: test-sample-availability
+name: build
 
 on:
   - push
@@ -14,5 +14,6 @@ jobs:
       - uses: ocaml/setup-ocaml@v3.2.7
         with:
           ocaml-compiler: 5.1.1
-      - run: dune build
+      - run: opam install . --deps-only --with-test
+      - run: opam exec -- dune build
   
