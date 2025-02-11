@@ -56,12 +56,18 @@ module Condition: sig
   val has_id_p : string -> Camel2d_entity.Playable.t t
   val is_in : int -> int -> Camel2d_entity.Renderable.t t
   val visible : Camel2d_entity.Renderable.t t
+  val x_is_smaller_than : int -> Camel2d_entity.Renderable.t t
+  val check_collision_with : Camel2d_entity.Renderable.t -> Camel2d_entity.Renderable.t t
 end
 
 module Updator: sig
   type 'a t
   val show : Camel2d_entity.Renderable.t t
   val hide : Camel2d_entity.Renderable.t t
+  val update_x : int -> Camel2d_entity.Renderable.t t
+  val update_y : int -> Camel2d_entity.Renderable.t t
+  val update_x_by_diff : int -> Camel2d_entity.Renderable.t t
+  val update_y_by_diff : int -> Camel2d_entity.Renderable.t t
   val replace_by_r : Camel2d_entity.Renderable.t -> Camel2d_entity_renderable.t t
   val replace_by_p : Camel2d_entity.Playable.t -> Camel2d_entity_playable.t t
   val play : Camel2d_entity.Playable.t t
@@ -70,7 +76,9 @@ end
 
 val id_of : 'a Condition.t -> string t
 val update_when : 'a Condition.t -> 'a Updator.t -> unit t
+val remove_when : 'a Condition.t -> unit t
 val exists : 'a Condition.t -> bool t
+val num_of : 'a Condition.t -> int t
 val spawn_r : Camel2d_entity.Renderable.t list -> unit t
 val spawn_p : Camel2d_entity.Playable.t list -> unit t
 val replace_by_id_r : string -> Camel2d_entity.Renderable.t -> unit t
@@ -84,3 +92,4 @@ val play_bgm : string -> unit t
 val stop_bgm : string -> unit t
 
 val to_front : string -> unit t
+val find : 'a Condition.t -> 'a t

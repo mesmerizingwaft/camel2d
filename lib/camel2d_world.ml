@@ -105,6 +105,15 @@ module Condition = struct
   let visible = Renderable (fun entity ->
     Camel2d_entity.Renderable.(entity.is_visible)
   )
+
+  let x_is_smaller_than xx = Renderable (fun entity ->
+    Camel2d_renderable_utils.x_is_smaller_than xx entity
+  )
+
+  let check_collision_with r = Renderable (fun entity ->
+    Camel2d_renderable_utils.check_collision r entity
+  )
+
 end
 
 module Updator = struct
@@ -117,6 +126,10 @@ module Updator = struct
 
   let show = Renderable Camel2d_renderable_utils.show
   let hide = Renderable Camel2d_renderable_utils.hide
+  let update_x new_x = Renderable (Camel2d_renderable_utils.update_x new_x)
+  let update_y new_y = Renderable (Camel2d_renderable_utils.update_y new_y)
+  let update_x_by_diff diff = Renderable (Camel2d_renderable_utils.update_x_by_diff diff)
+  let update_y_by_diff diff = Renderable (Camel2d_renderable_utils.update_y_by_diff diff)
   let replace_by_r entity = Renderable (fun _ -> entity)
   let replace_by_p entity = Playable (fun _ -> entity)
   let play = Playable Camel2d_entity.Playable.set_to_play
@@ -143,6 +156,14 @@ let update_when: type a. a Condition.t -> a Updator.t -> unit t = fun condition 
     | Playable c, Playable f ->
       let* playables = get_playables in
       aux c f playables |> put_playables
+
+let remove_when: type a. a Condition.t -> unit t = fun condition ->
+  let aux c items = List.filter (fun item -> not @@ c item) items in
+  match condition with
+    | Renderable c -> let* renderables = get_renderables in
+      aux c renderables |> put_renderables
+    | Playable c -> let* playables = get_playables in
+      aux c playables |> put_playables
 
 let exists: type a. a Condition.t -> bool t = fun condition ->
   match condition with
@@ -194,3 +215,23 @@ let to_front id =
       item::(inner target items)
   in
   put_renderables @@ inner None renderables
+
+let find : type a. a Condition.t -> a t = fun condition ->
+    let aux c items = return (List.find c items) in
+    match condition with
+      | Renderable c ->
+        let* renderables = get_renderables in
+        aux c renderables
+      | Playable c ->
+        let* playables = get_playables in
+        aux c playables
+
+let num_of : type a. a Condition.t -> int t = fun condition ->
+  let aux c items = return (List.length (List.filter c items)) in
+  match condition with
+    | Renderable c ->
+      let* renderables = get_renderables in
+      aux c renderables
+    | Playable c ->
+      let* playables = get_playables in
+      aux c playables

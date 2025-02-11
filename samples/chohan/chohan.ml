@@ -22,6 +22,7 @@ module Agreement = Templates.SimpleAgreement4BGM.Make(struct
   let game = chohan
   let message = literals.message
   let pt = 15
+  let next_scene = "main"
 end)
 
 module GameMain : Scene.T = struct

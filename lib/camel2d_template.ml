@@ -4,6 +4,7 @@ module SimpleAgreement4BGM = struct
     val game: Camel2d_game.t
     val message: string
     val pt: int
+    val next_scene: string
   end) : Camel2d_scene.T = struct
     let load_resources = Camel2d_resource.return ()
     
@@ -26,7 +27,7 @@ module SimpleAgreement4BGM = struct
       match ev with
         | Camel2d_event.MouseUp _ ->
           Camel2d_resource.Audio.resume context;
-          start_scene "main"
+          start_scene Params.next_scene
         | _ ->
           return ()
   

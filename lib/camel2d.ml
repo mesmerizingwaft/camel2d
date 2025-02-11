@@ -8,6 +8,7 @@ module Resource = Camel2d_resource
 module Entity = Camel2d_entity
 module RenderableUtils = Camel2d_renderable_utils
 module Templates = Camel2d_template
+module SnsUtils = Camel2d_snsutils
 
 let _event_loop event_handler =
   fun context ->

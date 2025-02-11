@@ -108,8 +108,10 @@ end = struct
 
   let create ~context ~style ~pos ?(is_visible=true) ?(base_horizontal=BHLeft) id text =
     let (x, y) = pos in
+    (* ToDo: FONT needs to be async loaded *)
     let (w, h) = text_width_of ~context ~style text, style.pt in
     let render {x; y; is_visible; _} context _ =
+      let (w, _) = text_width_of ~context ~style text, style.pt in
       if is_visible then begin
         _with_style style context (fun ctx ->
           let x = if base_horizontal = BHCenter

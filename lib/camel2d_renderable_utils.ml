@@ -25,6 +25,8 @@ let check_collision e1 e2 =
 
 let update_x new_x r = {r with x = new_x}
 let update_y new_y r = {r with y = new_y}
+let update_x_by_diff diff r = {r with x = r.x + diff}
+let update_y_by_diff diff r = {r with y = r.y + diff}
 
 let show r = {r with is_visible = true}
 let hide r = {r with is_visible = false}
