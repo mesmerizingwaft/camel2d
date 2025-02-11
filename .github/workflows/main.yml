@@ -14,5 +14,5 @@ jobs:
       - uses: ocaml/setup-ocaml@v3.2.7
         with:
           ocaml-compiler: 5.1.1
-  
+      - run: dune build
   

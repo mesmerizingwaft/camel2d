@@ -13,3 +13,4 @@
 | name   | description |
 | ------ | ------------|
 | chohan | A simple game to guess if the summation of 2 dice is odd or even. |
+| popping_alfie | A simple action game that has tweet button to share the score. |
