@@ -6,6 +6,8 @@
 
 ### Overview
 
+Here's an overview of the structure of a game created with this library. Please see [samples](https://github.com/mesmerizingwaft/camel2d/tree/master/samples) for more concrete examples.
+
 ```OCaml
 open Camel2d
 
@@ -62,15 +64,15 @@ let _ =
     start your_game "init"
 ```
 
-## How to run the sample projects
+### Sample projects
+
+| project_name   | description |
+| -------------- | ----------- |
+| chohan | A simple game to guess if the summation of 2 dice is odd or even. |
+| popping_alfie | A simple action game that has tweet button to share the score. |
+
+* sample projects can be run by the following script:
 
 ```bash
 ./scripts/<project_name>
 ```
-
-### Sample projects
-
-| name   | description |
-| ------ | ------------|
-| chohan | A simple game to guess if the summation of 2 dice is odd or even. |
-| popping_alfie | A simple action game that has tweet button to share the score. |
