@@ -74,5 +74,5 @@ let _ =
 * sample projects can be run by the following script:
 
 ```bash
-./scripts/<project_name>
+./scripts/run <project_name>
 ```

@@ -1,7 +1,9 @@
 name: build
 
 on:
-  - push
+  push:
+    branches:
+      - master
 
 permissions: read-all
 
@@ -9,7 +11,9 @@ jobs:
   setup-prerequisites:
     strategy:
       fail-fast: false
+
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout tree
         uses: actions/checkout@v4
