@@ -5,20 +5,20 @@
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github mesmerizingwaft/camel2d))
 
-(authors "Author Name <author@example.com>")
+(authors "mesmera <mesmera.waft@gmail.com>")
 
-(maintainers "Maintainer Name <maintainer@example.com>")
+(maintainers "mesmera <mesmera.waft@gmail.com>")
 
-(license LICENSE)
+(license MIT)
 
 (documentation https://url/to/documentation)
 
 (package
  (name camel2d)
- (synopsis "A short synopsis")
- (description "A longer description")
+ (synopsis "A 2D browser game library written in OCaml")
+ (description "A 2D browser game library written in OCaml")
  (depends ocaml)
  (tags
   ("add topics" "to describe" your project)))
