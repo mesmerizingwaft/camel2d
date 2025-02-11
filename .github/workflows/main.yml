@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
-      - uses: ocaml/setup-ocaml@v2.2.9
+      - uses: ocaml/setup-ocaml@v3.2.7
         with:
           ocaml-compiler: 5.1.1
   
