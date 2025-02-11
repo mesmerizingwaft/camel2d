@@ -4,9 +4,9 @@ synopsis: "A 2D browser game library written in OCaml"
 description: "A 2D browser game library written in OCaml"
 maintainer: ["mesmera <mesmera.waft@gmail.com>"]
 authors: ["mesmera <mesmera.waft@gmail.com>"]
-license: "LICENSE"
+license: "MIT"
 homepage: "https://github.com/mesmerizingwaft/camel2d"
-doc: "https://url/to/documentation"
+doc: "https://github.com/mesmerizingwaft/camel2d"
 bug-reports: "https://github.com/mesmerizingwaft/camel2d/issues"
 depends: [
   "dune" {>= "3.17"}
