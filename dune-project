@@ -11,7 +11,7 @@
 
 (maintainers "mesmera <mesmera.waft@gmail.com>")
 
-(license MIT)
+(license LICENSE)
 
 (documentation https://url/to/documentation)
 
