@@ -11,7 +11,7 @@
 
 (maintainers "mesmera <mesmera.waft@gmail.com>")
 
-(license LICENSE)
+(license MIT)
 
 (documentation https://github.com/mesmerizingwaft/camel2d)
 
