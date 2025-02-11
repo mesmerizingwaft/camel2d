@@ -11,6 +11,9 @@ bug-reports: "https://github.com/mesmerizingwaft/camel2d/issues"
 depends: [
   "dune" {>= "3.17"}
   "ocaml"
+  "uutf"
+  "js_of_ocaml"
+  "yojson"
   "odoc" {with-doc}
 ]
 build: [

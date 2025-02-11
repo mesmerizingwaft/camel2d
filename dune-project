@@ -19,6 +19,10 @@
  (name camel2d)
  (synopsis "A 2D browser game library written in OCaml")
  (description "A 2D browser game library written in OCaml")
- (depends ocaml))
+ (depends
+    ocaml
+    uutf
+    js_of_ocaml
+    yojson))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/reference/dune-project/index.html
