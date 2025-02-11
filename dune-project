@@ -13,14 +13,12 @@
 
 (license LICENSE)
 
-(documentation https://url/to/documentation)
+(documentation https://github.com/mesmerizingwaft/camel2d)
 
 (package
  (name camel2d)
  (synopsis "A 2D browser game library written in OCaml")
  (description "A 2D browser game library written in OCaml")
- (depends ocaml)
- (tags
-  ("add topics" "to describe" your project)))
+ (depends ocaml))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/reference/dune-project/index.html
