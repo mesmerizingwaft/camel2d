@@ -124,7 +124,11 @@ end = struct
         )
       end
     in
-    { id; render; is_visible; x; y; w; h }
+    match base_horizontal with
+      | BHCenter ->
+        let x = x - w / 2 in
+        { id; render; is_visible; x; y; w; h }
+      | BHLeft -> { id; render; is_visible; x; y; w; h }
 end
 
 let create_from_text
