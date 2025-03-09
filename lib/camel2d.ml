@@ -1,6 +1,7 @@
 open Js_of_ocaml
 
 module Game = Camel2d_game
+module Context = Camel2d_context
 module Scene = Camel2d_scene
 module World = Camel2d_world
 module Event = Camel2d_event
@@ -9,6 +10,9 @@ module Entity = Camel2d_entity
 module RenderableUtils = Camel2d_renderable_utils
 module Templates = Camel2d_template
 module SnsUtils = Camel2d_snsutils
+
+let enable_audio context =
+  Camel2d_resource_audio.resume context
 
 let _event_loop event_handler =
   fun context ->
@@ -45,6 +49,7 @@ let render context =
   let* bucket = get_bucket in
   let+ renderables = get_renderables in
   Camel2d_context.cleanup_canvas context;
+  let renderables = List.sort Camel2d_entity_renderable.(fun a b -> a.z_index - b.z_index) renderables in
   List.iter (Camel2d_entity.Renderable.render context bucket) renderables
 
 let play_se _context =

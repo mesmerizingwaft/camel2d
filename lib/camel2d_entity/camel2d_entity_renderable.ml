@@ -11,13 +11,14 @@ type t = {
   y: int;
   w: int;
   h: int;
+  z_index: int;
 }
 
 let render context resource_bucket ({render; _} as t) =
   render t context resource_bucket
 
 module SingleImage = struct
-  let create ~pos ~size ?(is_visible=true) id resource_name =
+  let create ~pos ~size ?(is_visible=true) ?(z_index=0) id resource_name =
     let (x, y), (w, h) = pos, size in
     let render {x; y; w; h; is_visible; _} context bucket =
       if is_visible then begin
@@ -25,7 +26,7 @@ module SingleImage = struct
         Camel2d_resource.Image.render img context ~x ~y ~w ~h
       end
     in
-    { id; render; is_visible; x; y; w; h }
+    { id; render; is_visible; x; y; w; h; z_index }
 end
 
 module TextLabel: sig
@@ -48,7 +49,7 @@ module TextLabel: sig
     int -> text_style
   
   val text_width_of: context:Camel2d_context.t -> style:text_style -> string -> int
-  val create: context: Camel2d_context.t -> style: text_style -> pos:(int * int) -> ?is_visible: bool -> ?base_horizontal: base_horizontal -> string -> string -> t
+  val create: context: Camel2d_context.t -> style: text_style -> pos:(int * int) -> ?is_visible: bool -> ?base_horizontal: base_horizontal -> ?z_index: int -> string -> string -> t
 end = struct
   type color = RGBA of int * int * int * float
   type outline = NoOutline | Edging of color
@@ -106,18 +107,13 @@ end = struct
     _with_style style context (fun ctx -> (ctx##measureText text)##.width)
     |> int_of_float
 
-  let create ~context ~style ~pos ?(is_visible=true) ?(base_horizontal=BHLeft) id text =
+  let create ~context ~style ~pos ?(is_visible=true) ?(base_horizontal=BHLeft) ?(z_index=0) id text =
     let (x, y) = pos in
     (* ToDo: FONT needs to be async loaded *)
     let (w, h) = text_width_of ~context ~style text, style.pt in
     let render {x; y; is_visible; _} context _ =
-      let (w, _) = text_width_of ~context ~style text, style.pt in
       if is_visible then begin
         _with_style style context (fun ctx ->
-          let x = if base_horizontal = BHCenter
-            then x - w / 2
-            else x
-          in
           _render_outline ctx style.outline text x y;
           ctx##fillText (Js.string text) (float_of_int x) (float_of_int y);
           ctx##restore
@@ -127,8 +123,8 @@ end = struct
     match base_horizontal with
       | BHCenter ->
         let x = x - w / 2 in
-        { id; render; is_visible; x; y; w; h }
-      | BHLeft -> { id; render; is_visible; x; y; w; h }
+        { id; render; is_visible; x; y; w; h; z_index }
+      | BHLeft -> { id; render; is_visible; x; y; w; h; z_index }
 end
 
 let create_from_text
@@ -138,6 +134,7 @@ let create_from_text
   ?(font_face=None)
   ?(letter_spacing="normal")
   ?(base_horizontal=`Left)
+  ?(z_index=0)
   ~pt ~pos ~size id text =
   let (x, y), (w, h) = pos, size in
   let render {x; y; is_visible; _} context _ =
@@ -172,4 +169,4 @@ let create_from_text
       ctx##restore
     end
   in
-  { id; render; is_visible; x; y; w; h }
+  { id; render; is_visible; x; y; w; h; z_index }

@@ -29,6 +29,7 @@ let create id resource_name =
     match p.state with
       | ToPlay ->
         let audio = fetch_audio bucket resource_name in
+        Audio.stop audio;
         Camel2d_resource.Audio.play audio;
         {p with state = Playing}
       | Playing ->
