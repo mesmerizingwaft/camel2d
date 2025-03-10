@@ -40,7 +40,6 @@ module GameTitle : Scene.T = struct
     >> load_image bg "bg.jpg"
 
   module Id = struct
-    let bgm = "bgm"
     let bg = "bg"
     let title_logo = "title_logo"
     let title_inst = "title_inst"
@@ -48,9 +47,6 @@ module GameTitle : Scene.T = struct
 
   let initialize context =
     let sw, sh = popping_alfie.width, popping_alfie.height in
-    let bgm = Entity.Playable.(
-      create Id.bgm ResourceLabels.bgm |> set_to_play
-    ) in
     let bg =
       let open Entity.Renderable in
       let pos = 0, 0 in
@@ -82,8 +78,8 @@ module GameTitle : Scene.T = struct
       create ~context ~style ~pos ~base_horizontal:BHCenter Id.title_inst "click to start"
     in
     let open World in
-    spawn_p [bgm]
-    >> spawn_r [bg; title_logo; title_inst]
+    play_audio ResourceLabels.bgm
+    >> spawn [bg; title_logo; title_inst]
 
   let handle_event _context ev =
     let open World in
@@ -96,7 +92,7 @@ module GameTitle : Scene.T = struct
 
   let flip_visibility =
     let open World in
-    let is_target = Condition.has_id_r Id.title_inst in
+    let is_target = Condition.has_id Id.title_inst in
     let* is_visible = exists Condition.(is_target &&& visible) in
     if is_visible then update_when is_target Updator.hide
     else update_when is_target Updator.show
@@ -145,19 +141,19 @@ module GameMain : Scene.T = struct
 
   let update_score context =
     let open World in
-    let is_alfie = Condition.(has_id_r Alfie.Id.alfie_in_air ||| has_id_r Alfie.Id.alfie_steady) in
+    let is_alfie = Condition.(has_id Alfie.Id.alfie_in_air ||| has_id Alfie.Id.alfie_steady) in
     let* alfie = find is_alfie in
-    let* num_of_chamomile = num_of Condition.(has_id_r Chamomile.Id.chamomile) in
-    remove_when Condition.(has_id_r Chamomile.Id.chamomile &&& check_collision_with alfie)
-    >> let* num_of_chamomile' = num_of Condition.(has_id_r Chamomile.Id.chamomile) in
+    let* num_of_chamomile = num_of Condition.(has_id Chamomile.Id.chamomile) in
+    remove_when Condition.(has_id Chamomile.Id.chamomile &&& check_collision_with alfie)
+    >> let* num_of_chamomile' = num_of Condition.(has_id Chamomile.Id.chamomile) in
     score := !score + (num_of_chamomile - num_of_chamomile');
     score_label_updator context
 
   let check_gameover =
     let open World in
-    let is_alfie = Condition.(has_id_r Alfie.Id.alfie_in_air ||| has_id_r Alfie.Id.alfie_steady) in
+    let is_alfie = Condition.(has_id Alfie.Id.alfie_in_air ||| has_id Alfie.Id.alfie_steady) in
     let* alfie = find is_alfie in
-    let* hit = exists Condition.(has_id_r Strawberry.Id.strawberry &&& check_collision_with alfie) in
+    let* hit = exists Condition.(has_id Strawberry.Id.strawberry &&& check_collision_with alfie) in
     if hit then start_scene "gameover" else return ()
 
   module ResourceLabels = struct
@@ -187,7 +183,7 @@ module GameMain : Scene.T = struct
       let size = sw, sh in
       SingleImage.create Id.bg ResourceLabels.bg ~pos ~size
     in
-    spawn_r [bg]
+    spawn [bg]
     >> init_alfie context
     >> init_score_label context
 
@@ -268,15 +264,15 @@ module GameOver : Scene.T = struct
         Id.btn_retry
         literals.label_retry
     in
-    spawn_r [label_gameover; btn_tweet; btn_retry]
+    spawn [label_gameover; btn_tweet; btn_retry]
 
   let handle_event _context ev =
     let open World in
     match ev with
       | Event.MouseUp {x; y; _} ->
         let* score' = use_ref Score.score in
-        let* btn_retry_clicked = exists Condition.(has_id_r Id.btn_retry &&& is_in x y) in
-        let* btn_tweet_clicked = exists Condition.(has_id_r Id.btn_tweet &&& is_in x y) in
+        let* btn_retry_clicked = exists Condition.(has_id Id.btn_retry &&& is_in x y) in
+        let* btn_tweet_clicked = exists Condition.(has_id Id.btn_tweet &&& is_in x y) in
         if btn_tweet_clicked then begin
           SnsUtils.tweet
             (literals.tweet_body ^ string_of_int score')

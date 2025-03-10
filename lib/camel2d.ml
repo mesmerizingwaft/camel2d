@@ -52,15 +52,6 @@ let render context =
   let renderables = List.sort Camel2d_entity_renderable.(fun a b -> a.z_index - b.z_index) renderables in
   List.iter (Camel2d_entity.Renderable.render context bucket) renderables
 
-let play_se _context =
-  let open World in
-  let* bucket = get_bucket in
-  let* playables = get_playables in
-  let playables =
-    List.map (Entity.Playable.update bucket) playables
-  in
-  put_playables playables
-
 let main context scenes initializor updator event_handler state =
   let rec inner initialize update handle_event state =
     let time_start = Js.date##now in
@@ -75,7 +66,6 @@ let main context scenes initializor updator event_handler state =
       initialize context
       >> handle_event context
       >> update context
-      >> play_se context
       >> render context
     ) with
       | NewScene name ->

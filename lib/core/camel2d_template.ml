@@ -20,7 +20,7 @@ module SimpleAgreement4BGM = struct
         create ~context ~style ~pos ~base_horizontal:BHCenter "message" Params.message
       in
       let open Camel2d_world in
-      spawn_r [message]
+      spawn [message]
   
     let handle_event context ev =
       let open Camel2d_world in

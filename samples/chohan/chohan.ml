@@ -63,11 +63,6 @@ module GameMain : Scene.T = struct
     let dice_l = "dice_l"
     let dice_r = "dice_r"
     let speech = "speech"
-    (* Playables *)
-    let bgm1 = "bgm1"
-    let bgm2 = "bgm2"
-    let se_lose = "se_lose"
-    let se_win = "se_win"
   end
 
   (* Entity functions *)
@@ -126,12 +121,6 @@ module GameMain : Scene.T = struct
 
   let initialize context =
     let sw, sh = chohan.width, chohan.height in
-    let bgm1 = Entity.Playable.(
-      create Id.bgm1 ResourceLabels.bgm1 |> set_to_play
-    ) in
-    let bgm2 = Entity.Playable.(
-      create Id.bgm2 ResourceLabels.bgm2
-    ) in
     let bg, fg =
       let open Entity.Renderable in
       let l_bg = ResourceLabels.bg in
@@ -177,16 +166,10 @@ module GameMain : Scene.T = struct
       in
       create ~context ~style ~pos:((sw - 25 * 21) / 2, 20) Id.speech literals.speech
     in
-    let se_win = let open Entity.Playable in
-      create Id.se_win ResourceLabels.se_win
-    in
-    let se_lose = let open Entity.Playable in
-      create Id.se_lose ResourceLabels.se_lose
-    in
     let open World in
     update_phase Init
-    >> spawn_p [bgm1; bgm2; se_win; se_lose]
-    >> spawn_r [
+    >> play_audio ResourceLabels.bgm1
+    >> spawn [
       bg;
       fg;
       speech;
@@ -200,27 +183,27 @@ module GameMain : Scene.T = struct
     let open World in
     let init_handler = function
       | Event.MouseMove {x; y} ->
-        let is_button_default = Condition.((has_id_r Id.button_cho) ||| (has_id_r Id.button_han)) in
-        let is_button_4_hover = Condition.((has_id_r Id.button_cho_mousehover) ||| (has_id_r Id.button_han_mousehover)) in
+        let is_button_default = Condition.((has_id Id.button_cho) ||| (has_id Id.button_han)) in
+        let is_button_4_hover = Condition.((has_id Id.button_cho_mousehover) ||| (has_id Id.button_han_mousehover)) in
         let is_mouse_on = Condition.is_in x y in
         update_when is_button_default Updator.show
         >> update_when is_button_4_hover Updator.hide
         >> update_when Condition.(is_button_default &&& is_mouse_on) Updator.hide
         >> update_when Condition.(is_button_4_hover &&& is_mouse_on) Updator.show
       | Event.MouseUp {x; y; _} ->
-        let* cho_clicked = exists Condition.(has_id_r Id.button_cho &&& is_in x y) in
-        let* han_clicked = exists Condition.(has_id_r Id.button_han &&& is_in x y) in
+        let* cho_clicked = exists Condition.(has_id Id.button_cho &&& is_in x y) in
+        let* han_clicked = exists Condition.(has_id Id.button_han &&& is_in x y) in
         let button_clicked = cho_clicked || han_clicked in
-        let is_button = Condition.(any_of (List.map has_id_r Id.[button_cho; button_cho_mousehover; button_han; button_han_mousehover])) in
+        let is_button = Condition.(any_of (List.map has_id Id.[button_cho; button_cho_mousehover; button_han; button_han_mousehover])) in
         let next_phase =
           if cho_clicked then DiceRolling(Cho, 0)
           else if han_clicked then DiceRolling(Han, 0)
           else Init
         in
         update_phase next_phase
-        >> update_when Condition.(lift_p button_clicked &&& (has_id_p Id.bgm1)) Updator.stop
-        >> update_when Condition.(lift_p button_clicked &&& (has_id_p Id.bgm2)) Updator.play
-        >> update_when Condition.(lift_r button_clicked &&& is_button) Updator.hide
+        >> (if button_clicked then stop_audio ResourceLabels.bgm1 else return ())
+        >> (if button_clicked then play_audio ResourceLabels.bgm2 else return ())
+        >> update_when Condition.(lift button_clicked &&& is_button) Updator.hide
       | _ -> return ()
     in
     let final_handler = function
@@ -236,30 +219,31 @@ module GameMain : Scene.T = struct
   let update context =
     let open World in
     let* phase = use_phase in
-    dbg_show_playables
-    >> match phase with
+    match phase with
       | Init -> return ()
       | DiceRolling (hand, counter) ->
         let a, b = roll_twice () in
         let dice_l = create_dice context Id.dice_l a ~idx:1 in
         let dice_r = create_dice context Id.dice_r b ~idx:2 in
-        let* dice_exists = exists Condition.(has_id_r Id.dice_l ||| has_id_r Id.dice_r) in
+        let* dice_exists = exists Condition.(has_id Id.dice_l ||| has_id Id.dice_r) in
         let next_phase = if counter <= 60
           then DiceRolling (hand, counter + 1)
           else if check_win hand a b then Win (a, b)
           else Lose (a, b)
         in
         let replace_dice =
-          replace_by_id_r Id.dice_l dice_l
-          >> replace_by_id_r Id.dice_r dice_r
+          replace_by_id Id.dice_l dice_l
+          >> replace_by_id Id.dice_r dice_r
         in
         update_phase next_phase
-        >> (if dice_exists then replace_dice else spawn_r [dice_l; dice_r])
+        >> (if dice_exists then replace_dice else spawn [dice_l; dice_r])
         >> (match next_phase with
           | Win _ ->
-            stop_bgm Id.bgm2 >> play_bgm Id.se_win
+            stop_audio ResourceLabels.bgm2
+            >> play_audio ResourceLabels.se_win
           | Lose _ ->
-            stop_bgm Id.bgm2 >> play_bgm Id.se_lose
+            stop_audio ResourceLabels.bgm2
+            >> play_audio ResourceLabels.se_lose
           | _ -> return ())
       | Win (_a, _b) ->
         label_win_updator

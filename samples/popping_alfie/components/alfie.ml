@@ -34,14 +34,14 @@ let create ground_height =
       create ~pos ~size ~is_visible:false Id.alfie_in_air ResourceLabels.alfie_in_air
     in
     let open World in
-    spawn_r [alfie_steady; alfie_in_air]
+    spawn [alfie_steady; alfie_in_air]
   in
   let updator =
     let open World in
     let* h = use_ref h in
-    update_when Condition.(has_id_r Id.alfie_steady ||| has_id_r Id.alfie_in_air) Updator.(update_y (ground_height - h))
-    >> let for_alfie_steady = update_when Condition.(has_id_r Id.alfie_steady) in
-    let for_alfie_in_air = update_when Condition.(has_id_r Id.alfie_in_air) in
+    update_when Condition.(has_id Id.alfie_steady ||| has_id Id.alfie_in_air) Updator.(update_y (ground_height - h))
+    >> let for_alfie_steady = update_when Condition.(has_id Id.alfie_steady) in
+    let for_alfie_in_air = update_when Condition.(has_id Id.alfie_in_air) in
     if h > 0 then begin
       for_alfie_steady Updator.hide
       >> for_alfie_in_air Updator.show

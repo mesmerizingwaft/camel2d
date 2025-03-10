@@ -25,11 +25,11 @@ let create ground_height h_max screen_w =
     let pos = screen_w, h in
     let size = 30, 30 in
     let c = create Id.chamomile ResourceLabels.chamomile ~pos ~size in
-    spawn_r [c]
+    spawn [c]
   in
   let updator =
     let open World in
-    remove_when Condition.(has_id_r Id.chamomile &&& x_is_smaller_than 0)
-    >> update_when Condition.(has_id_r Id.chamomile) Updator.(update_x_by_diff (-3))
+    remove_when Condition.(has_id Id.chamomile &&& x_is_smaller_than 0)
+    >> update_when Condition.(has_id Id.chamomile) Updator.(update_x_by_diff (-3))
   in
   gen, updator

@@ -25,12 +25,12 @@ let create () =
   let init context =
     let open World in
     let l = _gen_label context in
-    spawn_r [l]
+    spawn [l]
   in
   let updator context = 
     let open World in
     let new_label = _gen_label context in
-    update_when Condition.(has_id_r Id.label_score) Updator.(replace_by_r new_label)
+    update_when Condition.(has_id Id.label_score) Updator.(replace_by new_label)
   in
   score, init, updator
 

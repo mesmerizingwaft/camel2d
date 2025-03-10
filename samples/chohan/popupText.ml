@@ -20,16 +20,16 @@ let create
         create ~context ~style ~pos ~is_visible ~base_horizontal id text
       ) range in
       let open World in
-      spawn_r labels
+      spawn labels
     in
     let updator =
       let open World in
       let cand_ids = List.map (fun t -> id ^ "_" ^ string_of_int t) range in
-      let is_cand = Condition.(any_of (List.map has_id_r cand_ids)) in
+      let is_cand = Condition.(any_of (List.map has_id cand_ids)) in
       let* is_not_init = exists Condition.(is_cand &&& visible) in
       if not is_not_init then begin
         let id = id ^ "_0" in
-        update_when Condition.(has_id_r id) Updator.show
+        update_when Condition.(has_id id) Updator.show
         >> to_front id
       end
       else
@@ -43,7 +43,7 @@ let create
         if target_no < (n - 1) then
           let next_no = target_no + 1 in
           let target_id = id ^ "_" ^ string_of_int next_no in
-          let is_target = Condition.has_id_r target_id in
+          let is_target = Condition.has_id target_id in
           update_when is_cand Updator.hide
           >> update_when is_target Updator.show
           >> to_front target_id
