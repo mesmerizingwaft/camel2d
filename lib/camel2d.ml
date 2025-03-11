@@ -9,6 +9,7 @@ module Resource = Camel2d_resource
 module Entity = Camel2d_entity
 module Templates = Camel2d_template
 module SnsUtils = Camel2d_snsutils
+module Assets = Camel2d_assets
 
 let enable_audio context =
   Camel2d_resource_audio.resume context

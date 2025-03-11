@@ -9,6 +9,7 @@ module Resource = Camel2d_resource
 module Entity = Camel2d_entity
 module Templates = Camel2d_template
 module SnsUtils = Camel2d_snsutils
+module Assets = Camel2d_assets
 
 val enable_audio : Camel2d_context.t -> unit
 (** The entry point of the game you made *)

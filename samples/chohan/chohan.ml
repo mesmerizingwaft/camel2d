@@ -83,15 +83,15 @@ module GameMain : Scene.T = struct
     in
     let pos = (chohan.width / 2, (chohan.height - pt) / 2) in
     let f t = (5 - t) * 10 in
-    PopupText.create
+    Assets.PopupText.create
       ~style
       ~pos
       ~f
       ~base_horizontal:PopupText.BHCenter
       label text
 
-  let label_win_init, label_win_updator = create_popup_text Id.win literals.win
-  let label_lose_init, label_lose_updator = create_popup_text Id.lose literals.lose
+  module LabelWin = (val create_popup_text Id.win literals.win)
+  module LabelLose = (val create_popup_text Id.lose literals.lose)
 
   (* Logic *)
   type hand = Cho | Han
@@ -175,8 +175,8 @@ module GameMain : Scene.T = struct
       button_cho; (Entity.hide button_cho_on_mousehover);
       button_han; (Entity.hide button_han_on_mousehover)
     ]
-    >> label_win_init context
-    >> label_lose_init context
+    >> LabelWin.initialize context
+    >> LabelLose.initialize context
 
   let handle_event _context ev =
     let open World in
@@ -244,10 +244,8 @@ module GameMain : Scene.T = struct
             stop_audio ResourceLabels.bgm2
             >> play_audio ResourceLabels.se_lose
           | _ -> return ())
-      | Win (_a, _b) ->
-        label_win_updator
-      | Lose (_a, _b) ->
-        label_lose_updator
+      | Win (_a, _b) -> LabelWin.update context
+      | Lose (_a, _b) -> LabelLose.update context
 end
 
 let _ =
