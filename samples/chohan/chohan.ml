@@ -87,7 +87,7 @@ module GameMain : Scene.T = struct
       ~style
       ~pos
       ~f
-      ~base_horizontal:PopupText.BHCenter
+      ~base_horizontal:BHCenter
       label text
 
   module LabelWin = (val create_popup_text Id.win literals.win)
