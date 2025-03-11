@@ -4,7 +4,7 @@ and 'a next_scene =
   | NewScene of string
   | Continue of 'a * state
 and state = {
-  renderables: Camel2d_entity.Renderable.t list;
+  renderables: Camel2d_entity.t list;
   bucket: Camel2d_resource.bucket
 }
 
@@ -40,13 +40,12 @@ let put_bucket bucket = let* state = get in put {state with bucket}
 let put_renderables renderables = let* state = get in put {state with renderables}
 
 let dbg_show_renderables =
-  let id_of r = Camel2d_entity.Renderable.(r.id) in
   let+ renderables = get_renderables in
-  let ids = List.map id_of renderables in
+  let ids = List.map Camel2d_entity.id_of renderables in
   print_endline @@ Printf.sprintf "[%s]" (String.concat ";" ids)
 
 module Condition = struct
-  type r = Camel2d_entity.Renderable.t
+  type r = Camel2d_entity.t
 
   type t = C of (r -> bool)
     
@@ -65,45 +64,45 @@ module Condition = struct
     C (fun r -> List.exists (fun (C c) -> c r) cs)
 
   let has_id id = C (fun entity ->
-    Camel2d_renderable_utils.has_id id entity
+    Camel2d_entity.has_id id entity
   )
 
   let is_in x y = C (fun entity ->
-    Camel2d_renderable_utils.is_in x y entity
+    Camel2d_entity.is_in x y entity
   )
 
   let visible = C (fun entity ->
-    Camel2d_entity.Renderable.(entity.is_visible)
+    Camel2d_entity.is_visible entity
   )
 
   let x_is_smaller_than xx = C (fun entity ->
-    Camel2d_renderable_utils.x_is_smaller_than xx entity
+    Camel2d_entity.x_is_smaller_than xx entity
   )
 
   let check_collision_with r = C (fun entity ->
-    Camel2d_renderable_utils.check_collision r entity
+    Camel2d_entity.check_collision r entity
   )
 
 end
 
 module Updator = struct
-  type r = Camel2d_entity.Renderable.t
+  type r = Camel2d_entity.t
 
   type t = U : (r -> r) -> t
 
-  let show = U Camel2d_renderable_utils.show
-  let hide = U Camel2d_renderable_utils.hide
-  let update_x new_x = U (Camel2d_renderable_utils.update_x new_x)
-  let update_y new_y = U (Camel2d_renderable_utils.update_y new_y)
-  let update_x_by_diff diff = U (Camel2d_renderable_utils.update_x_by_diff diff)
-  let update_y_by_diff diff = U (Camel2d_renderable_utils.update_y_by_diff diff)
+  let show = U Camel2d_entity.show
+  let hide = U Camel2d_entity.hide
+  let update_x new_x = U (Camel2d_entity.update_x new_x)
+  let update_y new_y = U (Camel2d_entity.update_y new_y)
+  let update_x_by_diff diff = U (Camel2d_entity.update_x_by_diff diff)
+  let update_y_by_diff diff = U (Camel2d_entity.update_y_by_diff diff)
   let replace_by entity = U (fun _ -> entity)
 end
 
 let id_of (Condition.C c) =
     let* renderables = get_renderables in
     let e = List.find c renderables in
-    return Camel2d_entity.Renderable.(e.id)
+    return (Camel2d_entity.id_of e)
 
 let update_when (Condition.C c) (Updator.U u) =
   let* renderables = get_renderables in
@@ -155,7 +154,7 @@ let to_front id =
   let rec inner target = function
     | [] when Option.is_none target -> raise Not_found
     | [] -> [Option.get target]
-    | item::items when Camel2d_entity.Renderable.(item.id) = id ->
+    | item::items when Camel2d_entity.id_of item = id ->
       inner (Some item) items
     | item::items ->
       item::(inner target items)

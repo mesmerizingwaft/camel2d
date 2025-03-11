@@ -48,13 +48,13 @@ module GameTitle : Scene.T = struct
   let initialize context =
     let sw, sh = popping_alfie.width, popping_alfie.height in
     let bg =
-      let open Entity.Renderable in
+      let open Entity in
       let pos = 0, 0 in
       let size = sw, sh in
       SingleImage.create Id.bg ResourceLabels.bg ~pos ~size
     in
     let title_logo =
-      let open Entity.Renderable in
+      let open Entity in
       let style =
         let pt = 50 in
         let font_face = Some "Mochiy Pop One" in
@@ -66,7 +66,7 @@ module GameTitle : Scene.T = struct
       TextLabel.create ~context ~style ~pos ~base_horizontal:BHCenter Id.title_logo "PoppingAlfie"
     in
     let title_inst =
-      let open Entity.Renderable in 
+      let open Entity in 
       let open TextLabel in
       let style =
         let pt = 30 in
@@ -178,7 +178,7 @@ module GameMain : Scene.T = struct
     let sw, sh = popping_alfie.width, popping_alfie.height in
     let open World in
     let bg =
-      let open Entity.Renderable in
+      let open Entity in
       let pos = 0, 0 in
       let size = sw, sh in
       SingleImage.create Id.bg ResourceLabels.bg ~pos ~size
@@ -223,7 +223,7 @@ module GameOver : Scene.T = struct
 
   let initialize context =
     let open World in
-    let open Entity.Renderable in
+    let open Entity in
     let cx, cy = popping_alfie.width / 2, popping_alfie.height / 2 in
     let label_gameover =
       let open TextLabel in

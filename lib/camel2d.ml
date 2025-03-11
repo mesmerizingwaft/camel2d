@@ -7,7 +7,6 @@ module World = Camel2d_world
 module Event = Camel2d_event
 module Resource = Camel2d_resource
 module Entity = Camel2d_entity
-module RenderableUtils = Camel2d_renderable_utils
 module Templates = Camel2d_template
 module SnsUtils = Camel2d_snsutils
 
@@ -49,8 +48,8 @@ let render context =
   let* bucket = get_bucket in
   let+ renderables = get_renderables in
   Camel2d_context.cleanup_canvas context;
-  let renderables = List.sort Camel2d_entity_renderable.(fun a b -> a.z_index - b.z_index) renderables in
-  List.iter (Camel2d_entity.Renderable.render context bucket) renderables
+  let renderables = List.sort Camel2d_entity.compare_z renderables in
+  List.iter (Camel2d_entity.render context bucket) renderables
 
 let main context scenes initializor updator event_handler state =
   let rec inner initialize update handle_event state =

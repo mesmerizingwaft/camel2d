@@ -10,7 +10,7 @@ module SimpleAgreement4BGM = struct
     
     let initialize context =
       let message =
-        let open Camel2d_entity.Renderable in
+        let open Camel2d_entity in
         let open TextLabel in
         let style =
           let outline = Edging (RGBA (0, 0, 0, 1.)) in

@@ -21,7 +21,7 @@ val ifm : bool t -> 'a t -> 'a t -> 'a t
 val exec_when : bool t -> unit t -> unit t
 
 val get_bucket: Camel2d_resource.bucket t
-val get_renderables : (Camel2d_entity.Renderable.t list) t
+val get_renderables : (Camel2d_entity.t list) t
 
 val dbg_show_renderables : unit t
 (*
@@ -52,7 +52,7 @@ module Condition: sig
   val is_in : int -> int -> t
   val visible : t
   val x_is_smaller_than : int -> t
-  val check_collision_with : Camel2d_entity.Renderable.t -> t
+  val check_collision_with : Camel2d_entity.t -> t
 end
 
 module Updator: sig
@@ -63,7 +63,7 @@ module Updator: sig
   val update_y : int -> t
   val update_x_by_diff : int -> t
   val update_y_by_diff : int -> t
-  val replace_by : Camel2d_entity.Renderable.t -> t
+  val replace_by : Camel2d_entity.t -> t
 end
 
 val id_of : Condition.t -> string t
@@ -71,8 +71,8 @@ val update_when : Condition.t -> Updator.t -> unit t
 val remove_when : Condition.t -> unit t
 val exists : Condition.t -> bool t
 val num_of : Condition.t -> int t
-val spawn : Camel2d_entity.Renderable.t list -> unit t
-val replace_by_id : string -> Camel2d_entity.Renderable.t -> unit t
+val spawn : Camel2d_entity.t list -> unit t
+val replace_by_id : string -> Camel2d_entity.t -> unit t
 
 val use_ref : 'a ref -> 'a t
 val put_ref : 'a ref -> 'a -> unit t
@@ -82,4 +82,4 @@ val play_audio : Camel2d_resource.label -> unit t
 val stop_audio : Camel2d_resource.label -> unit t
 
 val to_front : string -> unit t
-val find : Condition.t -> Camel2d_entity.Renderable.t t
+val find : Condition.t -> Camel2d_entity.t t

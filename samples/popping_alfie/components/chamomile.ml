@@ -1,5 +1,5 @@
 open Camel2d
-open Entity.Renderable
+open Entity
 
 include SingleImage
 

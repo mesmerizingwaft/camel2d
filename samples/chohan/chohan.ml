@@ -67,8 +67,7 @@ module GameMain : Scene.T = struct
 
   (* Entity functions *)
   let create_dice context id number ~idx =
-    let open Entity.Renderable in
-    let open TextLabel in
+    let open Entity.TextLabel in
     let pt = 100 in
     let style = create_style pt in
     let pos = (chohan.width / 3 * idx, (chohan.height - pt) / 2) in
@@ -77,7 +76,7 @@ module GameMain : Scene.T = struct
   let create_popup_text label text =
     let pt = 200 in
     let style =
-      let open Entity.Renderable.TextLabel in
+      let open Entity.TextLabel in
       let font_face = Some "tamanegi" in
       let outline = Edging (RGBA (0, 0, 0, 1.)) in
       create_style ~font_face ~outline pt
@@ -122,7 +121,7 @@ module GameMain : Scene.T = struct
   let initialize context =
     let sw, sh = chohan.width, chohan.height in
     let bg, fg =
-      let open Entity.Renderable in
+      let open Entity in
       let l_bg = ResourceLabels.bg in
       let l_fg = ResourceLabels.fg in
       let bg = SingleImage.create Id.bg l_bg ~pos:(0, 0) ~size:(sw, sh) in
@@ -131,7 +130,7 @@ module GameMain : Scene.T = struct
       bg, fg
     in
     let button_cho, button_cho_on_mousehover =
-    let open Entity.Renderable in
+    let open Entity in
     let open TextLabel in
     let gen id color =
       let pt = 100 in
@@ -144,7 +143,7 @@ module GameMain : Scene.T = struct
     gen Id.button_cho (RGBA (255, 255, 255, 1.)),
     gen Id.button_cho_mousehover (RGBA (255, 200, 200, 1.)) in
     let button_han, button_han_on_mousehover =
-    let open Entity.Renderable in
+    let open Entity in
     let open TextLabel in
     let gen id color =
       let pt = 100 in
@@ -157,7 +156,7 @@ module GameMain : Scene.T = struct
     gen Id.button_han (RGBA (255, 255, 255, 1.)),
     gen Id.button_han_mousehover (RGBA (255, 200, 200, 1.)) in
     let speech =
-      let open Entity.Renderable in
+      let open Entity in
       let open TextLabel in
       let style =
         let font_face = Some "tamanegi" in
@@ -173,8 +172,8 @@ module GameMain : Scene.T = struct
       bg;
       fg;
       speech;
-      button_cho; (RenderableUtils.hide button_cho_on_mousehover);
-      button_han; (RenderableUtils.hide button_han_on_mousehover)
+      button_cho; (Entity.hide button_cho_on_mousehover);
+      button_han; (Entity.hide button_han_on_mousehover)
     ]
     >> label_win_init context
     >> label_lose_init context
