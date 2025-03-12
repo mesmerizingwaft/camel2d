@@ -18,13 +18,6 @@ end
 
 let literals = Literal.literals
 
-module Agreement = Templates.SimpleAgreement4BGM.Make(struct
-  let game = chohan
-  let message = literals.message
-  let pt = 15
-  let next_scene = "main"
-end)
-
 module GameMain : Scene.T = struct
   module ResourceLabels = struct
     open Resource
@@ -249,6 +242,5 @@ module GameMain : Scene.T = struct
 end
 
 let _ =
-  Game.add_scene chohan "agreement" (module Agreement);
   Game.add_scene chohan "main" (module GameMain);
-  start chohan "agreement" 
+  start chohan "main" 

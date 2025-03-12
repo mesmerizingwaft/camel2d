@@ -7,7 +7,6 @@ module World = Camel2d_world
 module Event = Camel2d_event
 module Resource = Camel2d_resource
 module Entity = Camel2d_entity
-module Templates = Camel2d_template
 module SnsUtils = Camel2d_snsutils
 module Assets = Camel2d_assets
 

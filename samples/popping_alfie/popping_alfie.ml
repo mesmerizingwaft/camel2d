@@ -16,13 +16,6 @@ end
 
 let literals = Literal.literals
 
-module Agreement = Templates.SimpleAgreement4BGM.Make(struct
-  let game = popping_alfie
-  let message = "This content contains audio. Click to agree and continue."
-  let pt = 15
-  let next_scene = "title"
-end)
-
 module GameTitle : Scene.T = struct
   module ResourceLabels = struct
     open Resource
@@ -289,10 +282,9 @@ end
 
 
 let _ =
-  Game.add_scene popping_alfie "agreement" (module Agreement);
   Game.add_scene popping_alfie "title" (module GameTitle);
   Game.add_scene popping_alfie "main" (module GameMain);
   Game.add_scene popping_alfie "gameover" (module GameOver);
-  start popping_alfie "agreement"
+  start popping_alfie "title"
 
 
