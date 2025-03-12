@@ -83,10 +83,15 @@ let _init context (t: Game.t) =
   context.html_canvas##.height := t.height
 
 let start (t: Game.t) (scene_name: string) =
+  let module Cover = Camel2d_scene_cover.Make (struct
+    let game = t
+    let next_scene = scene_name
+  end) in
+  Camel2d_game.add_scene t "__preset_cover" (module Cover);
   Dom_html.window##.onload := Dom_html.handler (fun _ ->
     let context = Camel2d_context.create () in
     _init context t;
-    let p_state = _load_new_scene context t.scenes scene_name in
+    let p_state = _load_new_scene context t.scenes "__preset_cover" in
     Promise.continue_after_resolved p_state (fun (state, initializor, updator, event_handler) ->
       main context t.scenes initializor updator event_handler state
     );
