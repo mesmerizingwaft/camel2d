@@ -19,4 +19,4 @@ val create_style :
   int -> text_style
 
 val text_width_of: context:Camel2d_context.t -> style:text_style -> string -> int
-val create: context: Camel2d_context.t -> style: text_style -> pos:(int * int) -> ?is_visible: bool -> ?base_horizontal: base_horizontal -> ?z_index: int -> string -> string -> t
+val create: context: Camel2d_context.t -> style: text_style -> pos:(int * int) -> ?is_visible: bool -> ?base_horizontal: base_horizontal -> ?z_index: int -> ?alpha: float -> string -> string -> t

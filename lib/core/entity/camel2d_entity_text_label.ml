@@ -57,13 +57,14 @@ let text_width_of ~context ~style text =
   _with_style style context (fun ctx -> (ctx##measureText text)##.width)
   |> int_of_float
 
-let create ~context ~style ~pos ?(is_visible=true) ?(base_horizontal=BHLeft) ?(z_index=0) id text =
+let create ~context ~style ~pos ?(is_visible=true) ?(base_horizontal=BHLeft) ?(z_index=0) ?(alpha=1.0) id text =
   let (x, y) = pos in
   (* ToDo: FONT needs to be async loaded *)
   let (w, h) = text_width_of ~context ~style text, style.pt in
-  let render {x; y; is_visible; _} context _ =
+  let render {x; y; is_visible; alpha; _} context _ =
     if is_visible then begin
       _with_style style context (fun ctx ->
+        ctx##.globalAlpha := alpha;
         _render_outline ctx style.outline text x y;
         ctx##fillText (Js.string text) (float_of_int x) (float_of_int y);
         ctx##restore
@@ -73,5 +74,5 @@ let create ~context ~style ~pos ?(is_visible=true) ?(base_horizontal=BHLeft) ?(z
   match base_horizontal with
     | BHCenter ->
       let x = x - w / 2 in
-      { id; render; is_visible; x; y; w; h; z_index }
-    | BHLeft -> { id; render; is_visible; x; y; w; h; z_index }
+      { id; render; is_visible; x; y; w; h; z_index; alpha }
+    | BHLeft -> { id; render; is_visible; x; y; w; h; z_index; alpha }

@@ -10,4 +10,5 @@ type t = {
   w: int;
   h: int;
   z_index: int;
+  alpha: float;
 }

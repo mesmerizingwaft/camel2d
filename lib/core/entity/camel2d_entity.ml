@@ -11,6 +11,8 @@ let render context resource_bucket ({render; _} as t) =
   render t context resource_bucket
 let show r = {r with is_visible = true}
 let hide r = {r with is_visible = false}
+let update_id id r = {r with id}
+let update_alpha alpha r = {r with alpha}
 let update_x new_x r = {r with x = new_x}
 let update_y new_y r = {r with y = new_y}
 let update_x_by_diff diff r = {r with x = r.x + diff}

@@ -36,7 +36,8 @@ let play_button x y =
     render = render;
     is_visible = true;
     x; y; w; h;
-    z_index=0
+    z_index=0;
+    alpha=1.0;
   }
 
 module Make(Params: sig
