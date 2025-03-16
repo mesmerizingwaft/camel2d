@@ -2,30 +2,40 @@ open Camel2d
 
 module Script = struct
   type line =
-    | Bg of Resource.label * string
-    | Text of string
+    | UpdateImage of Resource.label * string * string
+    | PlaySE of Resource.label * string
+    | UpdateBGM of Resource.label * string
+    | UpdateText of string
 
   let script =
     [%blob "prologue.txt"]
     |> String.split_on_char '\n'
     |> List.map (fun line ->
-      if String.sub line 0 3 = "#bg" then
-        let label = Resource.gen_label () in
-        let file_name = String.sub line 4 (String.length line - 4) |> String.trim in
-        Bg (label, file_name)
-      else
-        Text line)
+      match String.split_on_char ' ' line with
+        | ["#img"; id; filename] -> UpdateImage (Resource.gen_label (), id, filename)
+        | ["#se"; filename] -> PlaySE (Resource.gen_label (), filename)
+        | ["#bgm"; filename] -> UpdateBGM (Resource.gen_label (), filename)
+        | _ -> UpdateText line)
 
   let load_resources =
     let open Resource in
     let rec aux = function
       | [] -> return ()
-      | Bg (label, path) :: rest ->
+      | UpdateImage (label, _, path) :: rest ->
         load_image label path
         >> aux rest
-      | Text _ :: rest -> aux rest
+      | PlaySE (label, path) :: rest ->
+        set_audio_mode SE
+        >> load_audio label path
+        >> aux rest
+      | UpdateBGM (label, path) :: rest ->
+        set_audio_mode BGM
+        >> load_audio label path
+        >> aux rest
+      | UpdateText _ :: rest -> aux rest
     in
     set_image_root "/samples/novelgame/static/imgs/"
+    >> set_audio_root "/samples/novelgame/static/audio/"
     >> aux script
 
 end
@@ -35,10 +45,6 @@ let script = Script.script |> Array.of_list
 let make (game : Game.t) : (module Scene.T) = (module struct
   let sw, sh = game.width, game.height
   let line_no = ref 0
-
-  module Id = struct
-    let bg = "bg"
-  end
 
   module ResourceLabels = struct
     open Resource
@@ -73,15 +79,26 @@ let make (game : Game.t) : (module Scene.T) = (module struct
 
   let load_next_page =
     let open World in
-    let* line_no' = use_ref line_no in
-    match script.(line_no') with
-    | Text text ->
-      put_text text
-      >> put_ref line_no (line_no' + 1)
-    | Bg (label, _) ->
-      remove_when Condition.(has_id Id.bg)
-      >> spawn [Entity.SingleImage.create Id.bg label ~pos:(0, 0) ~size:(sw, sh) ~z_index:(-1)]
-      >> put_ref line_no (line_no' + 1)
+    let rec inner () =
+      let* line_no' = use_ref line_no in
+      match script.(line_no') with
+      | UpdateText text ->
+        put_text text
+        >> put_ref line_no (line_no' + 1)
+      | PlaySE (label, _) ->
+        play_audio label
+        >> put_ref line_no (line_no' + 1)
+        >> (let* _ = return () in inner())
+      | UpdateBGM (label, _) ->
+        play_audio label
+        >> put_ref line_no (line_no' + 1)
+        >> (let* _ = return () in inner())
+      | UpdateImage (label, id, _) ->
+        remove_when Condition.(has_id id)
+        >> spawn [Entity.SingleImage.create id label ~pos:(0, 0) ~size:(sw, sh) ~z_index:(-1)]
+        >> put_ref line_no (line_no' + 1)
+        >> (let* _ = return () in inner())
+    in inner ()
 
   let initialize context =
     let open World in
