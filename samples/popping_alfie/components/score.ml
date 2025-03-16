@@ -9,7 +9,7 @@ end
 
 let score = ref 0
 
-let _gen_label context =
+let _gen_label _context =
   let style =
     let pt = 20 in
     let font_face = Some "Mochiy Pop One" in
@@ -19,7 +19,7 @@ let _gen_label context =
   let label_text () =
     Printf.sprintf "SCORE: %d" !score
   in
-  create ~context ~style ~pos:(10, 10) Id.label_score (label_text ())  
+  create ~style ~pos:(10, 10) Id.label_score (label_text ())  
 
 let create () =
   let init context =

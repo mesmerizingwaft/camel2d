@@ -52,15 +52,16 @@ let _render_outline ctx outline text x y =
     ctx##restore;
   )
 
-let text_width_of ~context ~style text =
+let text_width_of ~style text =
+  let context = Camel2d_context.dummy_context () in
   let text = Js.string text in
   _with_style style context (fun ctx -> (ctx##measureText text)##.width)
   |> int_of_float
 
-let create ~context ~style ~pos ?(is_visible=true) ?(base_horizontal=BHLeft) ?(z_index=0) ?(alpha=1.0) id text =
+let create ~style ~pos ?(is_visible=true) ?(base_horizontal=BHLeft) ?(z_index=0) ?(alpha=1.0) id text =
   let (x, y) = pos in
   (* ToDo: FONT needs to be async loaded *)
-  let (w, h) = text_width_of ~context ~style text, style.pt in
+  let (w, h) = text_width_of ~style text, style.pt in
   let render {x; y; is_visible; alpha; _} context _ =
     if is_visible then begin
       _with_style style context (fun ctx ->

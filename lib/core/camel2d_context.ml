@@ -27,3 +27,7 @@ let cleanup_canvas (t: t) =
   context##.fillStyle := Js.string "rgb(0, 0, 0)";
   context##fillRect 0. 0. w h;
   ()
+
+let dummy_context () =
+  let canvas = Dom_html.createCanvas Dom_html.document in
+  {html_canvas=canvas; audio_context= new%js audioContext}

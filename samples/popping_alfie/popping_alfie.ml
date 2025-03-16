@@ -38,7 +38,7 @@ module GameTitle : Scene.T = struct
     let title_inst = "title_inst"
   end
 
-  let initialize context =
+  let initialize _context =
     let sw, sh = popping_alfie.width, popping_alfie.height in
     let bg =
       let open Entity in
@@ -56,7 +56,7 @@ module GameTitle : Scene.T = struct
         TextLabel.create_style ~font_face ~color ~outline pt
       in
       let pos = sw / 2, sh / 2 - 100 in
-      TextLabel.create ~context ~style ~pos ~base_horizontal:BHCenter Id.title_logo "PoppingAlfie"
+      TextLabel.create ~style ~pos ~base_horizontal:BHCenter Id.title_logo "PoppingAlfie"
     in
     let title_inst =
       let open Entity in 
@@ -68,7 +68,7 @@ module GameTitle : Scene.T = struct
         create_style ~font_face ~color pt
       in
       let pos = sw / 2, sh / 2 in
-      create ~context ~style ~pos ~base_horizontal:BHCenter Id.title_inst "click to start"
+      create ~style ~pos ~base_horizontal:BHCenter Id.title_inst "click to start"
     in
     let open World in
     play_audio ResourceLabels.bgm
@@ -214,7 +214,7 @@ module GameOver : Scene.T = struct
 
   let load_resources = Resource.return ()
 
-  let initialize context =
+  let initialize _context =
     let open World in
     let open Entity in
     let cx, cy = popping_alfie.width / 2, popping_alfie.height / 2 in
@@ -227,7 +227,6 @@ module GameOver : Scene.T = struct
         create_style ~font_face ~color pt
       in
       create
-        ~context
         ~style
         ~pos:(cx, cy - 50)
         ~base_horizontal: BHCenter
@@ -241,7 +240,6 @@ module GameOver : Scene.T = struct
     let btn_tweet =
       let open TextLabel in
       create
-        ~context
         ~style:style_btns
         ~pos:(cx, cy)
         ~base_horizontal:BHCenter
@@ -250,7 +248,6 @@ module GameOver : Scene.T = struct
     let btn_retry =
       let open TextLabel in
       create
-        ~context
         ~style: style_btns
         ~pos:(cx, cy + 20)
         ~base_horizontal: BHCenter

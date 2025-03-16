@@ -1,0 +1,43 @@
+<html>
+    <head>
+        <title>Sample - NovelGame</title>
+        <meta name="twitter:card" content="summary"></meta>
+        <script type="text/javascript">
+            function generateUUID() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = (Math.random() * 16) | 0;
+                    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+                    return v.toString(16);
+                });
+            }
+
+            const script = document.createElement('script');
+            script.src = `/_build/default/samples/novelgame/novelgame.bc.js?uuid=${generateUUID()}`;
+            script.type = 'text/javascript';
+            document.head.appendChild(script);
+        </script>
+        <style>
+            #main {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+            #main h2 {
+                text-align: center;
+            }
+        </style>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div id="system-message"></div>
+        <main id="main">
+            <canvas id="canvas-main"></canvas>
+            <section>
+                <h2>素材</h2>
+            </section>
+        </main>
+    </body>
+</html>

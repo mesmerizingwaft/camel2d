@@ -13,14 +13,14 @@ let create
 
   let load_resources () = Camel2d_resource.return ()
 
-  let initialize context =
+  let initialize _context =
     let open Camel2d_world in
     let labels = List.map (fun t ->
       let id = id ^ "_" ^ string_of_int t in
       let pt = style.pt + f t in
       let style = { style with pt } in
       let is_visible = false in
-      create ~context ~style ~pos ~is_visible ~base_horizontal id text
+      create ~style ~pos ~is_visible ~base_horizontal id text
     ) range in
     spawn labels
 

@@ -59,12 +59,12 @@ module GameMain : Scene.T = struct
   end
 
   (* Entity functions *)
-  let create_dice context id number ~idx =
+  let create_dice id number ~idx =
     let open Entity.TextLabel in
     let pt = 100 in
     let style = create_style pt in
     let pos = (chohan.width / 3 * idx, (chohan.height - pt) / 2) in
-    create ~context ~style ~pos ~base_horizontal: BHCenter id literals.dice_face.(number - 1)
+    create ~style ~pos ~base_horizontal: BHCenter id literals.dice_face.(number - 1)
 
   let create_popup_text label text =
     let pt = 200 in
@@ -131,7 +131,7 @@ module GameMain : Scene.T = struct
       let font_face = Some "tamanegi" in
       let pos = ((sw / 3 - 50), (sh - 100)/2) in
       let style = create_style ~color ~outline ~font_face pt in
-      create ~context ~style ~pos id literals.cho
+      create ~style ~pos id literals.cho
     in
     gen Id.button_cho (RGBA (255, 255, 255, 1.)),
     gen Id.button_cho_mousehover (RGBA (255, 200, 200, 1.)) in
@@ -144,7 +144,7 @@ module GameMain : Scene.T = struct
       let font_face = Some "tamanegi" in
       let pos = ((sw / 3 * 2 - 50), (sh - 100)/2) in
       let style = TextLabel.create_style ~color ~outline ~font_face pt in
-      create ~context ~style ~pos id literals.han
+      create ~style ~pos id literals.han
     in
     gen Id.button_han (RGBA (255, 255, 255, 1.)),
     gen Id.button_han_mousehover (RGBA (255, 200, 200, 1.)) in
@@ -156,7 +156,7 @@ module GameMain : Scene.T = struct
         let outline = Edging (RGBA (0, 0, 0, 1.)) in
         create_style ~font_face ~outline 25
       in
-      create ~context ~style ~pos:((sw - 25 * 21) / 2, 20) Id.speech literals.speech
+      create ~style ~pos:((sw - 25 * 21) / 2, 20) Id.speech literals.speech
     in
     let open World in
     update_phase Init
@@ -215,8 +215,8 @@ module GameMain : Scene.T = struct
       | Init -> return ()
       | DiceRolling (hand, counter) ->
         let a, b = roll_twice () in
-        let dice_l = create_dice context Id.dice_l a ~idx:1 in
-        let dice_r = create_dice context Id.dice_r b ~idx:2 in
+        let dice_l = create_dice Id.dice_l a ~idx:1 in
+        let dice_r = create_dice Id.dice_r b ~idx:2 in
         let* dice_exists = exists Condition.(has_id Id.dice_l ||| has_id Id.dice_r) in
         let next_phase = if counter <= 60
           then DiceRolling (hand, counter + 1)
