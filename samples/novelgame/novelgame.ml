@@ -106,7 +106,17 @@ module GameOver : Scene.T = struct
 
   let cnt = ref 0
 
-  let load_resources = Resource.return ()
+  module ResourceLabels = struct
+    open Resource
+    let se_gameover = gen_label ()
+  end
+
+  let load_resources =
+    let open Resource in
+    let open ResourceLabels in
+    set_audio_root "/samples/novelgame/static/audio/"
+    >> set_audio_mode SE
+    >> load_audio se_gameover "gameover.mp3"
 
   module Id = struct
     let gameover_text = "gameover_text"
@@ -132,6 +142,7 @@ module GameOver : Scene.T = struct
     let open World in
     put_ref cnt 0
     >> GameOverText.initialize context
+    >> play_audio ResourceLabels.se_gameover
 
   let handle_event _context _ev = World.return ()
 
