@@ -110,9 +110,13 @@ let make (game : Game.t) : (module Scene.T) = (module struct
     let open World in
     match ev with
       | Event.KeyUp { key_code = 32 } ->
-        ifm (let* l = remain_length in return (l <= 0))
-          (load_next_page)
-          (type_all)
+        let* line_no' = use_ref line_no in
+        if line_no' < Array.length script then
+          ifm (let* l = remain_length in return (l <= 0))
+            (load_next_page)
+            (type_all)
+        else
+          start_scene "gameover"
       | _ -> return ()
 
   let update context =

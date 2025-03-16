@@ -4,6 +4,11 @@ let linear_fadeout max_frame i =
   let max_frame = float_of_int max_frame in
   max 0. (1.0 -. (1.0 /. max_frame) *. i)
 
+let linear_fadein max_frame i =
+  let i = float_of_int i in
+  let max_frame = float_of_int max_frame in
+  min 1.0 (1.0 /. max_frame *. i)
+
 let linear_fadeinout ~frame_in ~frame_out max_frame i =
   let i = float_of_int i in
   let max_frame = float_of_int max_frame in
