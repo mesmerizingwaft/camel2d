@@ -50,11 +50,10 @@ module BrandLogo : Scene.T = struct
 end
 
 module GameTitle : Scene.T = struct
-  let sw, sh = novel_game.width, novel_game.height
+  let _sw, _sh = novel_game.width, novel_game.height
   module ResourceLabels = struct
     open Resource
     let bg = gen_label ()
-    let bg_message_box = gen_label ()
   end
 
   let load_resources =
@@ -62,30 +61,12 @@ module GameTitle : Scene.T = struct
     let open ResourceLabels in
     set_image_root "/samples/novelgame/static/imgs/"
     >> load_image bg "bg_title.png"
-    >> load_image bg_message_box "hakkou2.png"
-
-  let bg_message_box = 
-    let open Entity in
-    let w, h = sw - 20, 200 in
-    let pos = 10, sh - 210 in
-    SingleImage.create "bg_message_box" ResourceLabels.bg_message_box ~pos ~size:(w, h)
-
-  let {
-    Assets.MessageWindow.put_text;
-    clear_text;
-    m
-  } = Assets.MessageWindow.(
-    let style = Entity.TextLabel.(create_style ~color:(RGBA (255, 255, 255, 1.)) 20) in
-    create bg_message_box ~style ~padding_l:30 ~padding_t:30 ~padding_r:30 ~padding_b:30
-  )
-
-  module MessageWindow = (val m)
 
   module Id = struct
     let bg = "bg"
   end
 
-  let initialize context =
+  let initialize _context =
     let sw, sh = novel_game.width, novel_game.height in
     let bg =
       let open Entity in
@@ -95,24 +76,22 @@ module GameTitle : Scene.T = struct
     in
     let open World in
     spawn [bg]
-    >> MessageWindow.initialize context
-    >> put_text "This is a test text. Look at this. When you type very long text, it will be wrapped automatically. This is a test text. Look at this. When you type very long text, it will be wrapped automatically. This is a test text. Look at this. When you type very long text, it will be wrapped automatically. This is a test text. Look at this. When you type very long text, it will be wrapped automatically. This is a test text. Look at this. When you type very long text, it will be wrapped automatically."
 
   let handle_event _context ev =
     let open World in
     match ev with
     | Event.MouseDown _ | Event.KeyDown {key_code = 32} ->
-      clear_text ()
+      start_scene "prologue"
     | _ -> return ()
 
-  let update context =
+  let update _context =
     let open World in
-    MessageWindow.update context
-    >> return ()
+    return ()
 
 end
 
 let _ =
   Game.add_scene novel_game "brand_logo" (module BrandLogo);
   Game.add_scene novel_game "title" (module GameTitle);
+  Game.add_scene novel_game "prologue" (Prologue.make novel_game);
   start novel_game "brand_logo"

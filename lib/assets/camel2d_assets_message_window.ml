@@ -2,6 +2,8 @@
 type t = {
   put_text: string -> unit Camel2d_world.t;
   clear_text: unit -> unit Camel2d_world.t;
+  type_all: unit Camel2d_world.t;
+  remain_length: int Camel2d_world.t;
   m: (module Camel2d_assets_type.T);
 }
 
@@ -64,6 +66,20 @@ let create
     ) (List.rev line_of_texts) in
     spawn entities
   in
+  let remain_length =
+    let open Camel2d_world in
+    let* text_buffer = use_ref _text_buffer in
+    return (Unicode.length text_buffer)
+  in
+  let type_all =
+    let open Camel2d_world in
+    let rec loop () =
+      ifm (let* l = remain_length in return (l <= 0))
+        (return ())
+        (let* _ = return () in load_new_char >> loop ())
+    in
+    loop ()
+  in
   let m : (module Camel2d_assets_type.T) = (module 
     struct
       let load_resources () = Camel2d_resource.return ()
@@ -87,5 +103,7 @@ let create
   {
     put_text;
     clear_text;
+    type_all;
+    remain_length;
     m;
   }
