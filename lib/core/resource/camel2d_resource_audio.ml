@@ -11,10 +11,10 @@ type t = {
 let _buff = ref []
 
 let resume (context: Camel2d_context.t) =
-  context.audio_context##resume
+  (Camel2d_context.get_audio_context context)##resume
 
 let load ~(context:context) ?(is_loop=true) path =
-  let audio_context = context.audio_context in
+  let audio_context = Camel2d_context.get_audio_context context in
   let audio = Dom_html.(createAudio document) in
   _buff := audio::!_buff;
   audio##.src := Js.string path;

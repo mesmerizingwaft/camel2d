@@ -75,7 +75,7 @@ module GameTitle : Scene.T = struct
     clear_text;
     m
   } = Assets.MessageWindow.(
-    let style = Entity.TextLabel.(create_style ~color:(RGBA (255, 255, 255, 1.)) 40) in
+    let style = Entity.TextLabel.(create_style ~color:(RGBA (255, 255, 255, 1.)) 20) in
     create bg_message_box ~style ~padding_l:30 ~padding_t:30 ~padding_r:30 ~padding_b:30
   )
 
@@ -96,7 +96,7 @@ module GameTitle : Scene.T = struct
     let open World in
     spawn [bg]
     >> MessageWindow.initialize context
-    >> put_text "日本語のメッセージを正しくパースできるでしょうか？"
+    >> put_text "This is a test text. Look at this. When you type very long text, it will be wrapped automatically. This is a test text. Look at this. When you type very long text, it will be wrapped automatically. This is a test text. Look at this. When you type very long text, it will be wrapped automatically. This is a test text. Look at this. When you type very long text, it will be wrapped automatically. This is a test text. Look at this. When you type very long text, it will be wrapped automatically."
 
   let handle_event _context ev =
     let open World in
@@ -108,7 +108,7 @@ module GameTitle : Scene.T = struct
   let update context =
     let open World in
     MessageWindow.update context
-    >> World.dbg_show_renderables
+    >> return ()
 
 end
 
