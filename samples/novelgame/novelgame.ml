@@ -60,7 +60,7 @@ module GameTitle : Scene.T = struct
     let open Resource in
     let open ResourceLabels in
     set_image_root "/samples/novelgame/static/imgs/"
-    >> load_image bg "bg_title.png"
+    >> load_image bg "title.png"
 
   module Id = struct
     let bg = "bg"
@@ -74,8 +74,19 @@ module GameTitle : Scene.T = struct
       let size = sw, sh in
       SingleImage.create Id.bg ResourceLabels.bg ~pos ~size
     in
+    let title_text =
+      let open Entity in
+      let style =
+        let pt = 50 in
+        let color = TextLabel.RGBA (255, 255, 255, 1.) in
+        let outline = TextLabel.Edging (RGBA (0, 0, 0, 1.)) in
+        TextLabel.create_style ~color ~outline pt
+      in
+      let pos = sw / 2, sh / 2 - 100 in
+      TextLabel.create ~style ~pos ~base_horizontal:BHCenter "title_text" "Wagahai ha neko de aru"
+    in
     let open World in
-    spawn [bg]
+    spawn [bg; title_text]
 
   let handle_event _context ev =
     let open World in
