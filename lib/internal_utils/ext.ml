@@ -2,6 +2,8 @@
 module Js_of_ocaml: sig
   include module type of struct include Js_of_ocaml end
 
+  module Css_font = Ext_css_font
+
   class type audioNode = object
     method connect : audioNode Js.t -> unit Js.meth
   end
@@ -68,6 +70,8 @@ module Js_of_ocaml: sig
 
 end = struct
   include Js_of_ocaml
+
+  module Css_font = Ext_css_font
 
   class type audioNode = object
     method connect : audioNode Js.t -> unit Js.meth
