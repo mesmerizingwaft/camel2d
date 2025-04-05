@@ -13,10 +13,15 @@ let load src =
   );
   promise
 
-let render ?(alpha=1.0) img context ~x ~y ~w ~h =
+let render ?(alpha=1.0) ~context ~x ~y ?(w=None) ?(h=None) (img: t) =
   let ctx = Camel2d_context.get_context2d context in
-  let x, y, w, h = float_of_int x, float_of_int y, float_of_int w, float_of_int h in
+  let x, y = float_of_int x, float_of_int y in
+  let w = Option.(map (fun w -> float_of_int w) w |> value ~default:(float_of_int img##.width)) in
+  let h = Option.(map (fun h -> float_of_int h) h |> value ~default:(float_of_int img##.height)) in
   ctx##save;
   ctx##.globalAlpha := alpha;
   ctx##drawImage_withSize img x y w h;
   ctx##restore
+
+let width_of (img: t) = img##.width
+let height_of (img: t) = img##.height

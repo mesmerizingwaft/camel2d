@@ -1,5 +1,21 @@
 open Camel2d
 
+module AudioAgreement = Preset.Scene.SceneAudioAgreement.Make(struct
+  let next_scene = "brand_logo"
+end)
+
+
+let _ =
+  let novelgame = Game.create () in
+  Game.add_scene novelgame "audio_agreement" (module AudioAgreement);
+  Game.add_scene novelgame "brand_logo" (module Brandlogo);
+  Game.add_scene novelgame "title" (module Gametitle);
+  Game.add_scene novelgame "prologue" (module Story.Make(struct
+    let script = Story.load_script [%blob "prologue.txt"]
+  end));
+  Game.add_scene novelgame "gameover" (module Gameover);
+  start novelgame "audio_agreement"
+(*
 let novel_game = Game.create ()
 
 module BrandLogo : Scene.T = struct
@@ -176,3 +192,4 @@ let _ =
   Game.add_scene novel_game "prologue" (Prologue.make novel_game);
   Game.add_scene novel_game "gameover" (module GameOver);
   start novel_game "brand_logo"
+  *)

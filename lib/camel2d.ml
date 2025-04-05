@@ -1,98 +1,73 @@
 open Js_of_ocaml
 
-module Game = Camel2d_game
-module Context = Camel2d_context
-module Scene = Camel2d_scene
-module World = Camel2d_world
 module Event = Camel2d_event
 module Resource = Camel2d_resource
-module Entity = Camel2d_entity
-module SnsUtils = Camel2d_snsutils
-module Assets = Camel2d_assets
+module Updater = Camel2d_updater
+module SoundMixer = Camel2d_sound_mixer
+module Scene = Camel2d_scene
+module Preset = Camel2d_preset
+module Game = Camel2d_game
+module Renderer = Camel2d_renderer
+module Context = Camel2d_context
+module SNSUtils = Camel2d_snsutils
+module Unicode = Unicode
 
-let enable_audio context =
-  Camel2d_resource_audio.resume context
+type color = Camel2d_color.t
 
-let _event_loop event_handler =
-  fun context ->
-  let rec inner () =
-    let open World in
+let _event_loop event_handler t =
+  let rec inner t =
+    let open Updater in
     match Event.take () with
-      | None -> return ()
+      | None -> return t
       | Some ev ->
-        event_handler context ev
-        >> inner ()
-  in inner ()
+        let* t' = event_handler ev t in
+        inner t'
+  in inner t
 
-let _initializor initialize =
-  let is_initialized = ref false in fun context ->
-    if not !is_initialized then
-      let res = initialize context in
-      is_initialized := true;
-      res
-    else Camel2d_world.return ()
-
-let _load_new_scene context scenes name =
-  let module S = (val Hashtbl.find scenes name : Scene.T) in
-  let open Promise in
+let rec _start_scene
+  (context: Camel2d_context.t)
+  (game: Game.t)
+  (first_scene: string) =
+  let module S = (val Game.find_scene game first_scene) in
+  let event_loop = _event_loop S.event_handler in
+  let model = S.init context in
   Resource.Audio.stop_all ();
-  Scene.load_resources context (module S) >>= fun bucket ->
-  let state = World.new_state bucket in
-  let initializor = _initializor S.initialize in
-  let updator = S.update in
-  let event_handler = _event_loop S.handle_event in
-  return (state, initializor, updator, event_handler)
-
-let render context =
-  let open World in
-  let* bucket = get_bucket in
-  let+ renderables = get_renderables in
-  Camel2d_context.cleanup_canvas context;
-  let renderables = List.sort Camel2d_entity.compare_z renderables in
-  List.iter (Camel2d_entity.render context bucket) renderables
-
-let main context scenes initializor updator event_handler state =
-  let rec inner initialize update handle_event state =
+  let rec main_loop bucket state (model: S.t) =
     let time_start = Js.date##now in
-    let continue state =
+    let continue bucket state model =
       let time_consumed = Js.date##now -. time_start in
-      let next_timing = max (15. -. time_consumed) 0. in
-      let callback = Js.wrap_callback (fun () -> inner initialize update handle_event state) in
-      ignore @@ Dom_html.window##setTimeout callback next_timing
+      let next_timing = max (Camel2d_global.mspf -. time_consumed) 0. in
+      let callback = Js.wrap_callback (fun () -> main_loop bucket state model) in
+      ignore @@ Js_of_ocaml.Dom_html.window##setTimeout callback next_timing
     in
-    let open World in
-    match run ~state (
-      initialize context
-      >> handle_event context
-      >> update context
-      >> render context
-    ) with
-      | NewScene name ->
-        let p_state = _load_new_scene context scenes name in
-        Promise.continue_after_resolved p_state (fun (state, initializor, updator, event_handler) ->
-          inner initializor updator event_handler state
-        )
-      | Continue (_, state) -> continue state
+    let open Updater in
+    let next_scene = Updater.run ~state (event_loop model >>= S.updater >>= S.sound_mixer) in
+    match next_scene with
+      | NewScene name -> _start_scene context game name
+      | Continue (model, state) ->
+        let r_state = Renderer.new_state context bucket in
+        Camel2d_context.cleanup_canvas context;
+        ignore @@ Renderer.run ~state:r_state (S.renderer model);
+        continue bucket state model
   in
-  inner initializor updator event_handler state
+  let to_be_bucket = Scene.load_resources context (module S) in
+  Promise.continue_after_resolved to_be_bucket (fun bucket ->
+    let state = Updater.new_state context bucket in
+    main_loop bucket state model
+  )
 
-let _init context (t: Game.t) =
-  Camel2d_event.init context ();
-  context.html_canvas##.width := t.width;
-  context.html_canvas##.height := t.height
-
-let start (t: Game.t) (scene_name: string) =
-  let module Cover = Camel2d_scene_cover.Make (struct
-    let game = t
-    let next_scene = scene_name
-  end) in
-  Camel2d_game.add_scene t "__preset_cover" (module Cover);
+(** Start the game from the first_scene
+  @param width The width of the game window. (default: 640)
+  @param height The height of the game window. (default: 480)
+*)
+let start
+  ?(width=640)
+  ?(height=480)
+  (game: Game.t) (first_scene: string): unit =
   Dom_html.window##.onload := Dom_html.handler (fun _ ->
     let context = Camel2d_context.create () in
-    _init context t;
-    let p_state = _load_new_scene context t.scenes "__preset_cover" in
-    Promise.continue_after_resolved p_state (fun (state, initializor, updator, event_handler) ->
-      main context t.scenes initializor updator event_handler state
-    );
+    Camel2d_context.set_canvas_size context width height;
+    Camel2d_event.init context ();
+    _start_scene context game first_scene;
     Js._false
   )

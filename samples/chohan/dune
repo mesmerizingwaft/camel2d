@@ -3,5 +3,5 @@
  (modes js)
  (libraries camel2d yojson ppx_deriving_yojson.runtime)
  (preprocess (pps ppx_blob ppx_deriving_yojson))
- (preprocessor_deps (file literals.json))
+ (preprocessor_deps (glob_files literals/*.json))
 )

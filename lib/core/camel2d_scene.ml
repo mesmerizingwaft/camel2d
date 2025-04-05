@@ -1,15 +1,11 @@
-type 'a world = 'a Camel2d_world.t
-type context = Camel2d_context.t
-type bucket = Camel2d_resource.bucket
-type event = Camel2d_event.t
-type label = Camel2d_resource.label
-type 'a factory = 'a Camel2d_resource.factory
-
 module type T = sig
-  val load_resources : unit factory
-  val initialize : context -> unit world
-  val update : context -> unit world
-  val handle_event : context -> event -> unit world
+  type t
+  val load_resources : unit Camel2d_resource.factory
+  val init : Camel2d_context.t -> t
+  val renderer : t -> unit Camel2d_renderer.t
+  val sound_mixer : t -> t Camel2d_sound_mixer.t
+  val updater : t -> t Camel2d_updater.t
+  val event_handler : Camel2d_event.t -> t -> t Camel2d_updater.t
 end
 
 let load_resources context (module Scene : T) =

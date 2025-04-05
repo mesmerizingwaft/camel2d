@@ -1,6 +1,6 @@
 (library
  (public_name camel2d)
  (name camel2d)
- (libraries js_of_ocaml uutf)
+ (libraries js_of_ocaml uutf base64)
  (preprocess (pps js_of_ocaml-ppx)))
 (include_subdirs unqualified)

@@ -33,3 +33,13 @@ let get_audio_context t = Option.get t.audio_context
 let dummy_context () =
   let canvas = Dom_html.createCanvas Dom_html.document in
   {html_canvas=canvas; audio_context=None}
+
+let get_canvas_size t =
+  let canvas = t.html_canvas in
+  let width = canvas##.width in
+  let height = canvas##.height in
+  (width, height)
+
+let set_canvas_size t width height =
+  t.html_canvas##.width := width;
+  t.html_canvas##.height := height

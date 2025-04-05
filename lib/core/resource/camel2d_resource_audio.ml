@@ -48,7 +48,6 @@ let stop_all () =
     ignore @@ node##pause;
     node##.currentTime := 0.
   in
-  List.iter stop !_buff;
-  _buff := []
+  List.iter stop !_buff
 
 let is_ended {is_ended; _} = !is_ended
