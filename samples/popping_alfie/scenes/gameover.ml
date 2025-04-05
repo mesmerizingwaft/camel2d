@@ -65,19 +65,22 @@ let sound_mixer t =
     >> return {t with play_se = false}
   end else return t
 
-let updater t =
+let update_components e t =
   let open Updater in
-  if Preset.Basic.Text.clicked t.btn_tweet then begin
-    SNSUtils.tweet
-      (literals.tweet_body ^ string_of_int !Global.score)
-      ~url:(Some literals.url);
-    return {t with btn_tweet = Preset.Basic.Text.unclick t.btn_tweet}
-  end else if Preset.Basic.Text.clicked t.btn_retry then begin
-    start_scene "main"
-  end else return t
-
-let event_handler e t =
-  let open Updater in
-  let* btn_retry = Preset.Basic.Text.handle_event e t.btn_retry in
-  let* btn_tweet = Preset.Basic.Text.handle_event e t.btn_tweet in
+  let* btn_retry = Preset.Basic.Text.update e t.btn_retry in
+  let* btn_tweet = Preset.Basic.Text.update e t.btn_tweet in
   return {t with btn_retry; btn_tweet}
+
+let updater e t =
+  let open Updater in
+  let* t = update_components e t in
+  match e with
+    | Event.Tick when Preset.Basic.Text.clicked t.btn_tweet ->
+      SNSUtils.tweet
+        (literals.tweet_body ^ string_of_int !Global.score)
+        ~url:(Some literals.url);
+      return {t with btn_tweet = Preset.Basic.Text.unclick t.btn_tweet}
+    | Event.Tick when Preset.Basic.Text.clicked t.btn_retry ->
+      start_scene "main"
+    | _ ->
+      return t

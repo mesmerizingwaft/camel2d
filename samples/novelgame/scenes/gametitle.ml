@@ -46,11 +46,7 @@ let renderer t =
   Preset.Basic.Image.render t.bg
   >> Preset.Basic.Text.render t.title
 
-let updater t =
-  let open Updater in
-  return t
-
-let event_handler e t =
+let updater e t =
   let open Updater in
   match e with
     | Event.MouseDown _ | KeyDown {key_code = 32} ->

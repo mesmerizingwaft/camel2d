@@ -105,7 +105,7 @@ module FadingImage : sig
   val create : x:int -> y:int -> ?f:(int -> float) -> Camel2d_resource.label -> t
   val create_wh : x:int -> y:int -> w:int -> h:int -> ?f:(int -> float) -> Camel2d_resource.label -> t
   val render : t -> unit Renderer.t
-  val update : t -> t Updater.t
+  val update : Camel2d_event.t -> t -> t Updater.t
   val current_frame : t -> int
 end = struct
   type t = {
@@ -156,12 +156,15 @@ end = struct
       | None -> Image.render_xy ~x:t.x ~y:t.y t.label
       | Some (w, h) -> Image.render_xywh ~x:t.x ~y:t.y ~w ~h t.label
 
-  let update t =
+  let update e t =
     let open Updater in
     let* (w, h) = get_image_size t.label in
-    let size = if Option.is_none t.size then Some (w, h) else t.size in
-    let counter = (t.counter + 1) mod Int.max_int in
-    return {t with size; counter}
+    match e with
+      | Camel2d_event.Tick ->
+        let size = if Option.is_none t.size then Some (w, h) else t.size in
+        let counter = (t.counter + 1) mod Int.max_int in
+        return {t with size; counter}
+      | _ -> return t
 
   let current_frame t = t.counter
 end

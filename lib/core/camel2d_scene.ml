@@ -4,8 +4,7 @@ module type T = sig
   val init : Camel2d_context.t -> t
   val renderer : t -> unit Camel2d_renderer.t
   val sound_mixer : t -> t Camel2d_sound_mixer.t
-  val updater : t -> t Camel2d_updater.t
-  val event_handler : Camel2d_event.t -> t -> t Camel2d_updater.t
+  val updater : Camel2d_event.t -> t -> t Camel2d_updater.t
 end
 
 let load_resources context (module Scene : T) =

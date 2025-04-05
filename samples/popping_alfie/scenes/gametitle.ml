@@ -79,16 +79,17 @@ let sound_mixer t =
     >> return {t with play_audio = false}
   end else return t
 
-let updater t =
+let updater e t =
   let open Updater in
-  let* fg = Fg.update t.fg in
-  if t.counter mod 60 = 0
-  then return {t with fg; show_msg = not t.show_msg; counter=((t.counter + 1) mod Int.max_int)}
-  else return {t with fg; counter=((t.counter + 1) mod Int.max_int)}
-
-let event_handler e t =
-  let open Updater in
+  let* fg = Fg.update e t.fg in
   match e with
-    | Event.MouseUp _ ->
+    | Event.Tick when t.counter mod 60 = 0 ->
+      let show_msg = not t.show_msg in
+      let counter = (t.counter + 1) mod Int.max_int in
+      return {t with fg; show_msg; counter}
+    | Event.Tick ->
+      let counter = (t.counter + 1) mod Int.max_int in
+      return {t with fg; counter} 
+    | Event.MouseUp _ | Event.KeyUp {key_code = 32} ->
       start_scene "main"
     | _ -> return t

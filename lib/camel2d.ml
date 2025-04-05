@@ -29,7 +29,7 @@ let rec _start_scene
   (game: Game.t)
   (first_scene: string) =
   let module S = (val Game.find_scene game first_scene) in
-  let event_loop = _event_loop S.event_handler in
+  let event_loop = _event_loop S.updater in
   let model = S.init context in
   Resource.Audio.stop_all ();
   let rec main_loop bucket state (model: S.t) =
@@ -41,7 +41,7 @@ let rec _start_scene
       ignore @@ Js_of_ocaml.Dom_html.window##setTimeout callback next_timing
     in
     let open Updater in
-    let next_scene = Updater.run ~state (event_loop model >>= S.updater >>= S.sound_mixer) in
+    let next_scene = Updater.run ~state (event_loop model >>= S.updater Event.Tick >>= S.sound_mixer) in
     match next_scene with
       | NewScene name -> _start_scene context game name
       | Continue (model, state) ->

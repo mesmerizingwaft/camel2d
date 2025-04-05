@@ -36,7 +36,7 @@ let render t =
       inner imgs
   in inner t.imgs
 
-let update t =
+let update e t =
   let open Updater in
   let rec inner = function
     | [] -> []
@@ -45,17 +45,20 @@ let update t =
       let img = update_x (x - 1) img in
       img::(inner imgs)
   in
-  if t.counter / 5 = 0 then
-    return {t with counter=t.counter+1}
-  else
-    let t = {t with counter=0} in
-    let imgs = inner t.imgs in
-    let imgs =
-      if x_of (List.hd imgs) < -t.sw
-      then
-        let img = List.hd imgs in
-        let img = update_x t.sw img in
-        (List.tl imgs)@[img]
-      else imgs
-    in
-    return {t with imgs}
+  match e with
+    | Event.Tick -> 
+      if t.counter / 5 = 0 then
+        return {t with counter=t.counter+1}
+      else
+        let t = {t with counter=0} in
+        let imgs = inner t.imgs in
+        let imgs =
+          if x_of (List.hd imgs) < -t.sw
+          then
+            let img = List.hd imgs in
+            let img = update_x t.sw img in
+            (List.tl imgs)@[img]
+          else imgs
+        in
+        return {t with imgs}
+    | _ -> return t

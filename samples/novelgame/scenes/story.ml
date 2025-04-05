@@ -181,30 +181,34 @@ end): Scene.T = struct
         return {t with choices; script = lines}
       | _::lines -> read_new_line {t with script = lines}
 
-  let updater t =
+  let update_components e t =
     let open Updater in
-    let* message_box = Messagebox.update t.message_box in
-    match List.find_opt (fun (choice, _) -> Choice.clicked choice) t.choices with
-      | None -> return {t with message_box}
-      | Some (_, CStartScene scene_name) ->
-        start_scene scene_name
-      | Some (_, CPass) ->
-        let choices = [] in
-        read_new_line {t with message_box; choices}
-
-  let event_handler e t =
-    let open Updater in
+    let* message_box = Messagebox.update e t.message_box in
     let* choices = List.fold_left (fun choices (choice, action) ->
       let* choices = choices in
       let* choice = Choice.handle_event e choice in
       return ((choice, action)::choices)
     ) (return []) t.choices
     in
-    let t = {t with choices} in
+    return {t with message_box; choices}
+
+  let updater e t =
+    let open Updater in
+    let* t = update_components e t in
     match e with
+      | Event.Tick ->
+        let selected_choice = List.find_opt (fun (choice, _) -> Choice.clicked choice) t.choices in
+        Option.map (fun (_, action) ->
+          match action with
+            | CPass ->
+              let choices = [] in
+              read_new_line {t with choices}
+            | CStartScene scene_name ->
+              start_scene scene_name
+        ) selected_choice
+        |> Option.value ~default:(return t)
       | Event.MouseUp _ when t.choices = [] ->
         read_new_line t
-      | Event.MouseUp _ ->
-        return t
       | _ -> return t
+
 end

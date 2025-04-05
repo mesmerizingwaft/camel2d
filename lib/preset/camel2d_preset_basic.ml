@@ -100,7 +100,7 @@ module Text : sig
   type t
   
   val render : t -> unit Renderer.t
-  val handle_event : Camel2d_event.t -> t -> t Updater.t
+  val update : Camel2d_event.t -> t -> t Updater.t
   val create: style: style -> x:int -> y:int -> string -> t
   val create_centerized: style: style -> x:int -> y:int -> string -> t
   val clicked : t -> bool
@@ -139,7 +139,7 @@ end = struct
     else
       Text.draw ~x:t.x ~y:t.y t.text
 
-  let check_inclusion t x y =
+  let _get_text_size t =
     let open Updater in
     (match t.style.font_face with
       | None -> return ()
@@ -147,12 +147,16 @@ end = struct
     >> set_font_size t.style.pt
     >> set_letter_spacing t.style.letter_spacing
     >> get_text_size t.text
-    >>= fun (w, h) ->
-      let tx = if t.centerized then t.x - w / 2 else t.x in
-      let ty = if t.centerized then t.y - h / 2 else t.y in
-    return (x >= tx && x <= tx + w && y >= ty && y <= ty + h)
 
-  let handle_event e t =
+  let check_inclusion t x y =
+    let open Updater in
+    let* tw, th = _get_text_size t in
+    let tx = if t.centerized then t.x - tw / 2 else t.x in
+    let ty = if t.centerized then t.y - th / 2 else t.y in
+    let open Camel2d_preset_collision_detection.Rectangle in
+    return (check_inclusion ~x:tx ~y:ty ~w:tw ~h:th x y)
+
+  let update e t =
     let open Updater in
     match e with
       | Camel2d_event.MouseMove {x; y} ->

@@ -1,6 +1,6 @@
 open Camel2d
 
-module AudioAgreement = Preset.Scene.SceneAudioAgreement.Make(struct
+module AudioAgreement = Preset.Scene.AudioAgreement.Make(struct
   let next_scene = "brand_logo"
 end)
 

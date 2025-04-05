@@ -32,15 +32,11 @@ let sound_mixer t =
 let renderer t =
   Preset.Animation.FadingImage.render t
 
-let updater t =
+let updater e t =
   let open Updater in
-  let* t = Preset.Animation.FadingImage.update t in
-  if Preset.Animation.FadingImage.current_frame t > 120
-  then
-    start_scene "title"
-  else
-    return t
+  let* t = Preset.Animation.FadingImage.update e t in
+  match e with
+    | Event.Tick when Preset.Animation.FadingImage.current_frame t > 120 ->
+      start_scene "title"
+    | _ -> return t
 
-let event_handler _ t =
-  let open Updater in
-  return t

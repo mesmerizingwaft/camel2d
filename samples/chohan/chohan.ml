@@ -3,7 +3,7 @@ open Camel2d
 let _ = Random.self_init ()
 let literals = Literals.t
 
-module AudioAgreement = Preset.Scene.SceneAudioAgreement.Make(struct let next_scene = "main" end)
+module AudioAgreement = Preset.Scene.AudioAgreement.Make(struct let next_scene = "main" end)
 
 module GameMain : Scene.T = struct
   module ResourceLabels = struct
@@ -114,45 +114,63 @@ module GameMain : Scene.T = struct
     >> (if t.stop_audio then stop_all_sounds else return ())
     >> inner t.audios_to_be_played
 
-  let updater t =
+  let choose_hand hand =
     let open Updater in
-    let* (cw, ch) = get_canvas_size in
-    match t with
-      | {game_phase = Init {button_cho; button_han; _}; _} ->
-        let hand =
-          List.find_opt Preset.Basic.Text.(fun (btn, _) -> clicked btn)
-          [(button_cho, Cho); (button_han, Han)]
-        in
-        begin
-          match hand with
-            | None -> return t
-            | Some (_, hand) ->
-              let open Preset.Basic.Text in
-              let style = let open Style in
-                create ()
-                |> set_font_size 100
-                |> set_color (RGB (255, 255, 255))
-                |> set_outline (Edging (RGB (0, 0, 0)))
-              in
-              let label_dice1 = create_centerized ~style ~x:(cw / 3) ~y:(ch / 2) literals.dice_face.(0) in
-              let label_dice2 = create_centerized ~style ~x:(cw / 3 * 2) ~y:(ch / 2) literals.dice_face.(0) in
-              return {
-                stop_audio = true;
-                audios_to_be_played = [ResourceLabels.bgm2];
-                game_phase = HandSelected {
-                  hand; label_dice1; label_dice2; counter=0
-              }}
-        end
-      | {game_phase = HandSelected state_hand_selected; _} ->
-        let {hand; counter; label_dice1; label_dice2; _} = state_hand_selected in
+    let open Preset.Basic.Text in
+    let* cw, ch = get_canvas_size in
+    let style = let open Style in
+      create ()
+      |> set_font_size 100
+      |> set_color (RGB (255, 255, 255))
+      |> set_outline (Edging (RGB (0, 0, 0)))
+    in
+    let label_dice1 = create_centerized ~style ~x:(cw / 3) ~y:(ch / 2) literals.dice_face.(0) in
+    let label_dice2 = create_centerized ~style ~x:(cw / 3 * 2) ~y:(ch / 2) literals.dice_face.(0) in
+    return (HandSelected {
+        hand; label_dice1; label_dice2; counter=0
+    })
+
+  let update_in_init t e state_init =
+    let open Updater in
+    let* button_cho = Preset.Basic.Text.update e state_init.button_cho in
+    let* button_han = Preset.Basic.Text.update e state_init.button_han in
+    match e with
+      | Event.Tick when Preset.Basic.Text.(clicked button_cho || clicked button_han) ->
+        let hand = if Preset.Basic.Text.clicked button_cho then Cho else Han in
+        let* game_phase = choose_hand hand in
+        return {
+          stop_audio = true;
+          audios_to_be_played = [ResourceLabels.bgm2];
+          game_phase
+        }
+      | _ -> return {t with game_phase = Init {
+        state_init with button_cho; button_han
+      }}
+
+  let update_in_hand_selected t e (state_hand_selected: state_hand_selected) =
+    let open Updater in
+    let* cw, ch = get_canvas_size in
+    let* label_dice1 = Preset.Basic.Text.update e state_hand_selected.label_dice1 in
+    let* label_dice2 = Preset.Basic.Text.update e state_hand_selected.label_dice2 in
+    let counter = state_hand_selected.counter in
+    let hand = state_hand_selected.hand in
+    match e with
+      | Event.Tick ->
         let dice1, dice2 = Random.int 6, Random.int 6 in
         let label_dice1 = Preset.Basic.Text.update_text (literals.dice_face.(dice1)) label_dice1 in
-        let label_dice2 = Preset.Basic.Text.update_text (literals.dice_face.(dice2)) label_dice2 in
-        if counter >= 60 then begin
+        let label_dice2 = Preset.Basic.Text.update_text (literals.dice_face.(dice2)) label_dice2 in        
+        if counter <= 60 then begin
+          return {t with game_phase = HandSelected {
+            state_hand_selected with
+            counter = counter + 1;
+            label_dice1;
+            label_dice2
+          }}
+        end else begin
           let message, se =
-            match hand, (dice1 + dice2) mod 2 = 0 with
-              | Cho, true | Han, false -> literals.win, ResourceLabels.se_win
-              | Cho, false | Han, true -> literals.lose, ResourceLabels.se_lose
+          match hand, (dice1 + dice2) mod 2 = 0 with
+            | Cho, true | Han, false -> literals.win, ResourceLabels.se_win
+            | Cho, false | Han, true -> literals.lose, ResourceLabels.se_lose
           in
           let result =
             let open Preset.Animation.PopupText in
@@ -169,33 +187,27 @@ module GameMain : Scene.T = struct
               label_dice1;
               label_dice2;
           }}
-        end else begin
-          return {t with game_phase = HandSelected {
-            state_hand_selected with
-            counter = counter + 1;
-            label_dice1;
-            label_dice2
-          }}
         end
-      | {game_phase = GameEnd state_game_end; _} ->
-        let open Updater in
-        let* result = Preset.Animation.PopupText.update state_game_end.result in
-        return {t with game_phase = GameEnd {state_game_end with result}}
+      | _ -> return t
 
-  let event_handler e t =
+  let update_in_game_end t e (state_game_end: state_game_end) =
     let open Updater in
+    let* result = Preset.Animation.PopupText.update state_game_end.result in
+    match e with
+      | Event.MouseUp _ -> start_scene "main"
+      | _ -> return {t with game_phase = GameEnd {
+        state_game_end with result
+      }}
+
+  let updater e t =
     match t with
       | {game_phase = Init state_init; _} ->
-        let open Preset.Basic.Text in
-        let* button_cho = handle_event e state_init.button_cho in
-        let* button_han = handle_event e state_init.button_han in
-        return {t with game_phase = Init {state_init with button_cho; button_han}}
-      | {game_phase = GameEnd _; _} -> begin
-        match e with
-          | Event.MouseUp _ -> start_scene "main"
-          | _ -> return t
-        end
-      | _ -> Updater.return t
+        update_in_init t e state_init
+      | {game_phase = HandSelected state_hand_selected; _} ->
+        update_in_hand_selected t e state_hand_selected
+      | {game_phase = GameEnd state_game_end; _} ->
+        update_in_game_end t e state_game_end
+
 end
 
 let _ = 

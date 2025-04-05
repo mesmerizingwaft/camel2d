@@ -51,6 +51,7 @@ module KeyUp = struct
 end
 
 type t =
+  | Tick
   | MouseUp of MouseUp.t
   | MouseDown of MouseDown.t
   | MouseClick of MouseClick.t

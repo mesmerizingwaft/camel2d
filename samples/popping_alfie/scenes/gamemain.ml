@@ -1,5 +1,7 @@
 open Camel2d
 
+let jump_max = 5
+
 module ResourceLabels = struct
   open Resource
   let bgm = gen_label ()
@@ -7,7 +9,6 @@ module ResourceLabels = struct
 end
 
 type t = {
-  cnt: int;
   score: int;
   bg: Bg.t;
   fg: Fg.t;
@@ -40,8 +41,7 @@ let init context =
   let items = Items.create sw sh in
   let score = 0 in
   let se_to_be_played = [ResourceLabels.bgm] in
-  let cnt = 0 in
-  {cnt; score; fg; bg; jump_power; alfie; items; se_to_be_played}
+  {score; fg; bg; jump_power; alfie; items; se_to_be_played}
 let renderer t =
   let open Renderer in
   Bg.render t.bg
@@ -67,42 +67,46 @@ let jump t =
   let jump_power = 0 in
   {t with jump_power; alfie; se_to_be_played = [ResourceLabels.se_jump]}
 
-let updater t =
+let update_components e t =
   let open Updater in
-  let jump_max = 5 in
-  let t = {t with cnt = (t.cnt + 1) mod Int.max_int } in
-  let* bg = Bg.update t.bg in
-  let* fg = Fg.update t.fg in
-  let* items = Items.update t.items in
-  let* alfie = Alfie.update t.alfie in
+  let* bg = Bg.update e t.bg in
+  let* fg = Fg.update e t.fg in
+  let* items = Items.update e t.items in
+  let* alfie = Alfie.update e t.alfie in
+  return {t with bg; fg; items; alfie}  
+
+let process_items t =
+  let open Updater in
   let item_obtained, items = Items.get_item ~f:(
-    fun x y w h -> Alfie.check_collision x y w h alfie
-  ) items in
-  let score = match item_obtained with
-    | Some (Items.Chamoile) -> t.score + 10
-    | _ -> t.score
-  in
-  if item_obtained = Some (Items.Strawberry) then begin
-    Global.score := score;
-    start_scene "gameover"
-  end else
-    let t = {t with score; bg; fg; items; alfie} in
-    if t.jump_power > jump_max
-    then return (jump t)
-    else begin
-      let jump_power =
-        if t.jump_power > 0 then t.jump_power + 1 else t.jump_power
-      in
-      return {t with jump_power}
-    end
-let event_handler e t =
+    fun x y w h -> Alfie.check_collision x y w h t.alfie
+  ) t.items in
+  match item_obtained with
+    | Some (Items.Chamoile) ->
+      let score = t.score + 10 in
+      return {t with score; items}
+    | Some (Items.Strawberry) ->
+      Global.score := t.score;
+      start_scene "gameover"
+    | _ -> return {t with items}
+
+let updater e t =
   let open Updater in
+  let* t = update_components e t in
   match e with
+    | Event.Tick ->
+      let* t = process_items t in
+      if t.jump_power > jump_max
+      then return (jump t)
+      else begin
+        let jump_power =
+          if t.jump_power > 0 then t.jump_power + 1 else t.jump_power
+        in
+        return {t with jump_power}
+      end
     | Event.KeyDown {key_code = 32} when Alfie.jumpable t.alfie ->
       let jump_power = if t.jump_power = 0 then 1 else 0 in
       return {t with jump_power}
     | Event.KeyUp {key_code = 32} when t.jump_power > 0 ->
       return (jump t)
     | _ -> return t
-
 

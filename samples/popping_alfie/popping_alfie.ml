@@ -2,7 +2,7 @@ open Camel2d
 
 let _ = Random.self_init ()
 
-module AudioAgreement = Preset.Scene.SceneAudioAgreement.Make(struct let next_scene = "title" end)
+module AudioAgreement = Preset.Scene.AudioAgreement.Make(struct let next_scene = "title" end)
 
 let _ =
   let popping_alfie = Game.create () in

@@ -16,7 +16,10 @@ let renderer _ =
   >> set_color (RGB (255, 255, 255))
   >> Text.draw_centerized ~x:(sw / 2) ~y:(sh / 2) "Game Over"
 
-let updater t = Updater.return t
-
-let event_handler _ t = Updater.return t
+let updater e t =
+  let open Updater in
+  match e with
+    | Event.MouseDown _ | KeyDown {key_code = 32} ->
+      start_scene "title"
+    | _ -> return t
 

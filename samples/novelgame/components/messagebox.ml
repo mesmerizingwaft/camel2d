@@ -119,11 +119,14 @@ let load_new_char t =
       let character_per_frame = Int.min (Int.max (character_per_sec / 60) 1) (Unicode.length t.remain_text) in
       load_new_char_with_typewriter_effect character_per_frame t
 
-let update t =
+let update e t =
   let open Updater in
-  let* bg = Preset.Basic.Image.update t.bg in
-  let* t = load_new_char t in
-  return {t with bg}
+  match e with
+    | Event.Tick ->
+      let* bg = Preset.Basic.Image.update t.bg in
+      let* t = load_new_char t in
+      return {t with bg}
+    | _ -> return t
 
 let send_text text t =
   let remain_text = text in
