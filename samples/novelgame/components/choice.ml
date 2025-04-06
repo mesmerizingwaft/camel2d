@@ -33,25 +33,24 @@ let render t =
   Preset.Basic.Image.render t.bg
   >> Preset.Basic.Text.render t.label_text
 
-let update t =
+let update_components e t =
   let open Updater in
-  let* bg = Preset.Basic.Image.update t.bg in
+  let* bg = Preset.Basic.Image.update e t.bg in
   return {t with bg}
 
-let handle_event ev t =
+let update e t =
   let open Updater in
-  let* bg = Preset.Basic.Image.handle_event ev t.bg in
-  let t = {t with bg} in
-  match ev with
-  | Event.MouseMove {x; y} ->
-    let* mouse_on = Preset.Basic.Image.check_inclusion t.bg x y in
-    if mouse_on then
-      let bg = Preset.Basic.Image.update_label ResourceLabels.bg_selected t.bg in
-      return {t with bg}
-    else
-      let bg = Preset.Basic.Image.update_label ResourceLabels.bg t.bg in
-      return {t with bg}
-  | _ -> return t
+  let* t = update_components e t in
+  match e with
+    | Event.MouseMove {x; y} ->
+      let* mouse_on = Preset.Basic.Image.check_inclusion t.bg x y in
+      if mouse_on then
+        let bg = Preset.Basic.Image.update_label ResourceLabels.bg_selected t.bg in
+        return {t with bg}
+      else
+        let bg = Preset.Basic.Image.update_label ResourceLabels.bg t.bg in
+        return {t with bg}
+    | _ -> return t
 
 let clicked t = Preset.Basic.Image.clicked t.bg
 let unclick t = {t with bg = Preset.Basic.Image.unclick t.bg}

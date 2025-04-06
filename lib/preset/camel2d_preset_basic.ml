@@ -6,7 +6,7 @@ type color = Camel2d_color.t
 
 module Image : sig
   type t
-  val update : t -> t Updater.t
+  val update : Camel2d_event.t -> t -> t Updater.t
   val render : t -> unit Renderer.t
   val create : x:int -> y:int -> Camel2d_resource.label -> t
   val create_wh : x:int -> y:int -> w:int -> h:int -> Camel2d_resource.label -> t
@@ -22,7 +22,6 @@ module Image : sig
   val clicked : t -> bool
   val unclick : t -> t
   val check_inclusion : t -> int -> int -> bool Updater.t
-  val handle_event : Camel2d_event.t -> t -> t Updater.t
 end = struct
   type t = {
     x: int;
@@ -31,11 +30,6 @@ end = struct
     label: Camel2d_resource.label;
     is_clicked: bool;
   }
-  let update t =
-    let open Updater in
-    let* (w, h) = get_image_size t.label in
-    let size = if Option.is_none t.size then Some (w, h) else t.size in
-    return {t with size}
 
   let render t =
     let open Camel2d_renderer in
@@ -80,13 +74,18 @@ end = struct
         let ty = t.y in
         return (x >= tx && x <= tx + w && y >= ty && y <= ty + h)
 
-  let handle_event e t =
+  let update e t =
     let open Updater in
     match e with
-      | Camel2d_event.MouseUp {x; y; _} ->
+      | Camel2d_event.Tick ->
+        let* (w, h) = get_image_size t.label in
+        let size = if Option.is_none t.size then Some (w, h) else t.size in
+        return {t with size}
+      | MouseUp {x; y; _} ->
         let* included = check_inclusion t x y in
         return {t with is_clicked = included}
       | _ -> return t
+
 end
 
 

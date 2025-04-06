@@ -56,22 +56,23 @@ let spawn_new_item t =
   in
   {t with entities = ({item; img} :: t.entities)}
 
-let update_entities t =
+let update_entities e t =
   let open Updater in
   let rec inner = function
     | [] -> return []
     | {item; img} :: xs ->
-      let* img = update img in
+      let* img = update e img in
       let* xs = inner xs in
       return ({item; img} :: xs)
-  in inner t.entities
+  in 
+  let* entities = inner t.entities in
+  return {t with entities}
 
 let update e t =
   let open Updater in
+  let* t = update_entities e t in
   match e with
     | Event.Tick ->
-      let* entities = update_entities t in
-      let t = {t with entities} in
       let t = if Random.float 1. < 0.01 then spawn_new_item t else t in
       let entities = List.filter_map (fun {item; img} ->
         let x = x_of img in

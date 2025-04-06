@@ -186,7 +186,7 @@ end): Scene.T = struct
     let* message_box = Messagebox.update e t.message_box in
     let* choices = List.fold_left (fun choices (choice, action) ->
       let* choices = choices in
-      let* choice = Choice.handle_event e choice in
+      let* choice = Choice.update e choice in
       return ((choice, action)::choices)
     ) (return []) t.choices
     in

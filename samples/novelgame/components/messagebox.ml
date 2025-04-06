@@ -123,7 +123,7 @@ let update e t =
   let open Updater in
   match e with
     | Event.Tick ->
-      let* bg = Preset.Basic.Image.update t.bg in
+      let* bg = Preset.Basic.Image.update e t.bg in
       let* t = load_new_char t in
       return {t with bg}
     | _ -> return t
