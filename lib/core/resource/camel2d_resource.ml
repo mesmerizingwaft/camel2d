@@ -115,15 +115,20 @@ let run context t =
   List.iter (fun (name, font) -> Hashtbl.add font_bucket name font) fonts;
   return { images = image_bucket; animes = anime_bucket; audios = audio_bucket; fonts = font_bucket }
 
+let fetch_resource resource_type bucket name =
+  let open Camel2d_error_types in
+  match Hashtbl.find_opt bucket name with
+    | None -> raise (ResourceNotLoaded resource_type)
+    | Some resource -> resource
+
 let fetch_image bucket name =
-  try
-    Hashtbl.find bucket.images name
-  with _ ->
-    failwith "failed to fetch image"
+  fetch_resource "image" bucket.images name
+
 let fetch_anime bucket name =
-  try
-    Hashtbl.find bucket.animes name
-  with _ ->
-    failwith "failed to fetch anime"
-let fetch_audio bucket name = Hashtbl.find bucket.audios name
-let fetch_font bucket name = Hashtbl.find bucket.fonts name
+  fetch_resource "anime" bucket.animes name
+
+let fetch_audio bucket name =
+  fetch_resource "audio" bucket.audios name
+
+let fetch_font bucket name =
+  fetch_resource "font" bucket.fonts name

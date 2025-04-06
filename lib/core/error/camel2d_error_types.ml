@@ -1,0 +1,2 @@
+
+exception ResourceNotLoaded of string
