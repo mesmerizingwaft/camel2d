@@ -86,7 +86,7 @@ module Make(Script: sig
 end): Scene.T = struct
   type t = {
     script: line list;
-    message_box: Messagebox.t;
+    message_box: Preset.Adv.MessageBox.t;
     bg: Preset.Basic.Image.t option;
     choices: (Choice.t * action) list;
   }
@@ -94,14 +94,16 @@ end): Scene.T = struct
   module ResourceLabels = struct
     open Resource
     let font_tamanegi = gen_label ()
+    let bg_message_box = gen_label ()
   end
 
   let load_resources =
     let open Resource in
     load_resources_from_script Script.script
-    >> Messagebox.load_resources
     >> set_font_root "/samples/novelgame/static/fonts/"
     >> load_font ResourceLabels.font_tamanegi "tamanegi_v7.ttf"
+    >> set_image_root  "/samples/novelgame/static/imgs/"
+    >> load_image ResourceLabels.bg_message_box "hakkou2.png"
     >> Choice.load_resources
 
   let _ = Script.script
@@ -114,12 +116,15 @@ end): Scene.T = struct
       |> Preset.TextStyle.set_outline (Edging (RGB (0, 0, 0)))
       |> Preset.TextStyle.set_font_size 30
     in
+    let message_box =
+      let open Preset.Adv.MessageBox in
+      create ~x:10 ~y:(sh - 210) ~w:(sw-20) ~h:200 ~text_style ~label_bg:ResourceLabels.bg_message_box ()
+      |> set_padding ~left:30 ~top:30 ~right:30 ~bottom:30
+      |> enable_typewriter_effect ~character_per_sec:500
+    in
     {
       script = Script.script;
-      message_box =
-        Messagebox.create ~x:10 ~y:(sh - 210) ~w:(sw-20) ~h:200 ~text_style ()
-        |> Messagebox.set_padding ~left:30 ~top:30 ~right:30 ~bottom:30
-        |> Messagebox.enable_typewriter_effect ~character_per_sec:500;
+      message_box;
       bg = None;
       choices = [];
     }
@@ -136,7 +141,7 @@ end): Scene.T = struct
     let open Renderer in
     Option.map (fun bg -> Preset.Basic.Image.render bg) t.bg
     |> Option.value ~default:(return ())
-    >> Messagebox.render t.message_box
+    >> Preset.Adv.MessageBox.render t.message_box
     >> render_choices t
 
   let rec read_new_line t =
@@ -145,7 +150,7 @@ end): Scene.T = struct
     match t.script with
       | [] -> return t
       | (UpdateText text)::lines ->
-        let message_box = Messagebox.send_text text t.message_box in
+        let message_box = Preset.Adv.MessageBox.send_text text t.message_box in
         return {t with message_box; script = lines}
       | (UpdateBGM (label, _))::lines ->
         SoundMixer.play_sound label >>
@@ -183,7 +188,7 @@ end): Scene.T = struct
 
   let update_components e t =
     let open Updater in
-    let* message_box = Messagebox.update e t.message_box in
+    let* message_box = Preset.Adv.MessageBox.update e t.message_box in
     let* choices = List.fold_left (fun choices (choice, action) ->
       let* choices = choices in
       let* choice = Choice.update e choice in
