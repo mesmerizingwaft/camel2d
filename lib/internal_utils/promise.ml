@@ -93,10 +93,14 @@ let str_of_state = function
 let continue_after_resolved p k =
   let open Js_of_ocaml in
   let rec inner p =
-    if is_resolved @@ ignore p then k (run p)
-    else
-      let inner = Js.wrap_callback (fun () -> inner p) in
-      _ignore @@ Dom_html.window##setTimeout inner 15.
+    Camel2d_error.error_presenter (fun () ->
+      match p.state with
+        | Resolved _ -> _ignore @@ k (run p)
+        | Rejected exn -> raise exn
+        | Pending ->
+          let inner = Js.wrap_callback (fun () -> inner p) in
+          _ignore @@ Dom_html.window##setTimeout inner 15.
+    )
   in inner p
 
 module List = struct

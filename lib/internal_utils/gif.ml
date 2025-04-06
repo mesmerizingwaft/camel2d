@@ -28,12 +28,6 @@ end = struct
     let width = Bytes.get_uint16_le data 0 in
     let height = Bytes.get_uint16_le data 2 in
     let packed_field = Bytes.get_uint8 data 4 in
-    (*
-    let has_global_color_table = (packed land 0x80) <> 0 in
-    let color_resolution = ((packed lsr 4) land 0x07) + 1 in
-    let sorted = (packed land 0x08) <> 0 in
-    let global_color_table_size = 1 lsl ((packed land 0x07) + 1) in
-    *)
     let background_color_index = Bytes.get_uint8 data 5 in
     let pixel_aspect_ratio = Bytes.get_uint8 data 6 in
     ({ width; height; packed_field; background_color_index; pixel_aspect_ratio }, Bytes.sub data 7 (Bytes.length data - 7))
@@ -397,33 +391,3 @@ let delay_time_of (frame: t) =
       | [] -> failwith "no GraphicControlExtension"
   in
   inner frame.blocks
-
-(* Example usage *)
-(*
-let _ =
-  let ic = open_in_bin "./samples/popping_alfie/static/imgs/alfie.gif" in
-  let len = in_channel_length ic in
-  let data = Bytes.create len in
-  really_input ic data 0 len;
-  close_in ic;
-  let gif = from_bytes data in
-  let gifs = slice_animated_gif gif in
-  List.iteri (fun i gif ->
-    let bytes = to_bytes gif in
-    let oc = open_out_bin (Printf.sprintf "./dump%d.gif" i) in
-    output_bytes oc bytes;
-    close_out oc;
-  ) gifs;
-  (*let _ = from_bytes (to_bytes gif) in*)
-  (*
-  try
-    assert (to_bytes gif = data)
-  with e ->
-    let oc = open_out_bin "./dump1.bin" in
-    output_bytes oc data;
-    close_out oc;
-    let oc = open_out_bin "./dump2.bin" in
-    output_bytes oc (to_bytes gif);
-    close_out oc;
-    raise e
-    *)*)

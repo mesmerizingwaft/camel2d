@@ -43,8 +43,8 @@ let rec _start_scene
     let open Updater in
     let next_scene =
       Camel2d_error.error_presenter (fun () ->
-        Updater.run ~state (event_loop model >>= S.updater Event.Tick >>= S.sound_mixer)
-      ) ()
+      Updater.run ~state (event_loop model >>= S.updater Event.Tick >>= S.sound_mixer)
+      )
     in
     match next_scene with
       | NewScene name -> _start_scene context game name

@@ -39,11 +39,15 @@ let notify_critical_error msg =
   Dom.appendChild bg_critical_error critical_error;
   Dom.appendChild Dom_html.document##.body bg_critical_error
 
-let error_presenter f () =
+let error_presenter f =
   try
     f ()
   with
     | ResourceNotLoaded resource_type ->
       let msg = Printf.sprintf "Some resource label was refered before it was loaded. Please check if all the resource labels are loaded before the scene loaded. (resource_type: %s)" resource_type in
+      notify_critical_error msg;
+      failwith msg
+    | ResourceNotAvailable (resource_type, resource_path) ->
+      let msg = Printf.sprintf "Failed to load the resource (%s) (resource_type: %s). Please, make sure the path is correct and the server host the resource" resource_path resource_type in
       notify_critical_error msg;
       failwith msg

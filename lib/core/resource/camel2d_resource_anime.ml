@@ -10,8 +10,12 @@ let load src =
   let req = XmlHttpRequest.create () in
   Js.Unsafe.meth_call req "open" [|Js.Unsafe.coerce (Js.string "GET"); Js.Unsafe.coerce (Js.string src); Js.Unsafe.coerce Js._true|] |> ignore;
   req##.responseType := Js.string "arraybuffer";
-  Js.Unsafe.set req "onload" (Dom_html.handler (fun _ ->
-    print_endline "loaded";
+  Js.Unsafe.set req "onloadend" (Dom_html.handler (fun _ ->
+    if req##.status = 404
+    then let open Camel2d_error_types in
+    Promise.reject resolver (ResourceNotAvailable ("anime", src));
+    Js._false
+  else
     let array_buffer = Js.Unsafe.get req "response" in
     let byte_array = Js.Unsafe.new_obj Js.Unsafe.global##.Uint8Array [|Js.Unsafe.coerce array_buffer|] in
     let ocmal_bytes = Bytes.create (byte_array##.length) in
@@ -19,11 +23,9 @@ let load src =
       Bytes.set ocmal_bytes i (char_of_int (byte_array##at i))
     done;
     let gif = Gif.from_bytes ocmal_bytes in
-    Gif.LogicalScreenDescriptor.print gif.logical_screen_descriptor;
     let frames = Gif.slice_animated_gif gif in
     let frames = List.map (fun frame ->
       let promise, resolver = Promise.make () in
-      print_endline "frame to be loaded";
       let img = Dom_html.createImg Dom_html.document in
       let encoded_frame =
         Gif.to_bytes frame
@@ -32,8 +34,6 @@ let load src =
       in
       img##.src := Js.string ("data:image/gif;base64," ^ encoded_frame);
       img##.onload := Dom_html.handler (fun _ ->
-        print_endline "frame loaded";
-        print_endline (Printf.sprintf "delay_time_of=%d" (Gif.delay_time_of frame));
         Promise.resolve resolver (Gif.delay_time_of frame, img);
         Js._false
       );
@@ -41,7 +41,6 @@ let load src =
     ) frames in
     let open Promise in
     continue_after_resolved (List.sequence frames) (fun frames ->
-      print_endline (Printf.sprintf "all frames loaded: #frames=%d" (List.length frames));
       let msec_to_index msec =
         let max_msec =
           List.fold_left (fun acc (delay_time, _) ->

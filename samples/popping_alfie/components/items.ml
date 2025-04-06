@@ -38,8 +38,6 @@ let create sw sh = {
 
 let render t =
   let open Renderer in
-  print_endline (string_of_int (List.length t.entities))
-  >>
   let rec inner = function
     | [] -> return ()
     | {img; _} :: xs ->

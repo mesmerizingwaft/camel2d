@@ -6,11 +6,16 @@ type t = Dom_html.imageElement Js.t
 let load src =
   let img = Dom_html.createImg Dom_html.document in
   let promise, resolver = Promise.make () in
-  img##.src := Js.string src;
   img##.onload := Dom_html.handler (fun _ ->
     Promise.resolve resolver img;
     Js._false
   );
+  img##.onerror := Dom_html.handler (fun _ ->
+    let open Camel2d_error_types in
+    Promise.reject resolver (ResourceNotAvailable ("image", src));
+    Js._false
+  );
+  img##.src := Js.string src;
   promise
 
 let render ?(alpha=1.0) ~context ~x ~y ?(w=None) ?(h=None) (img: t) =
