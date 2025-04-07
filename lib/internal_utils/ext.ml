@@ -153,8 +153,9 @@ let is_fullscreen (): bool =
 
 let scale_mouse_pointer (canvas: Dom_html.canvasElement Js.t) x y =
   let rect = canvas##getBoundingClientRect in
-  let scale_x = 640. /. (Js.Optdef.to_option rect##.width |> Option.get) in
-  let scale_y = 480. /. (Js.Optdef.to_option rect##.height |> Option.get) in
+  let scale_x = (float_of_int canvas##.width) /. (Js.Optdef.to_option rect##.width |> Option.get) in
+  let scale_y = (float_of_int canvas##.height) /. (Js.Optdef.to_option rect##.height |> Option.get) in
+  print_endline @@ "rect##.left" ^ string_of_float rect##.left;
   let x = ((float_of_int x) -. rect##.left) *. scale_x in
   let y = ((float_of_int y) -. rect##.top) *. scale_y in
   int_of_float x, int_of_float y

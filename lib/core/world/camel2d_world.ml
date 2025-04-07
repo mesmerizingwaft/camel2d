@@ -70,7 +70,8 @@ let get_text_size text =
     let open Js_of_ocaml in
     let width = let text = Js.string text in
       (ctx##measureText text)##.width
-    in (int_of_float width, text_style.pt)
+    in
+    (int_of_float width, text_style.pt)
   ) |> return
 
 let get_image_size label =

@@ -1,28 +1,48 @@
 <html>
     <head>
         <title>Sample - Chohan</title>
-        <script type="text/javascript" src="/_build/default/samples/chohan/chohan.bc.js"></script>
-        <style>
-            @font-face {
-                font-family: "tamanegi";
-                src: url("/samples/chohan/static/fonts/tamanegi_v7.ttf");
+        <script type="text/javascript">
+            function generateUUID() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = (Math.random() * 16) | 0;
+                    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+                    return v.toString(16);
+                });
             }
+
+            const script = document.createElement('script');
+            script.src = `/_build/default/samples/chohan/chohan.bc.js?uuid=${generateUUID()}`;
+            script.type = 'text/javascript';
+            document.head.appendChild(script);
+        </script>
+        <style>
             #main {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
             }
-            #main h2 {
+            #gamebody,#game-description {
                 text-align: center;
+            }
+            #canvas-wrapper {
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
         </style>
     </head>
     <body>
-        <div id="system-message"></div>
         <main id="main">
-            <canvas id="canvas-main"></canvas>
-            <section>
+            <section id="gamebody">
+                <div id="canvas-wrapper">
+                    <canvas id="canvas-main"></canvas>
+                </div>
+                <a href="#" onclick="javascript: setFullscreen()">
+                    FullScreen
+                </a>
+            </section>
+            <section id="game-description">
                 <h2>素材</h2>
                 <ul>
                     <li><a href="https://booth.pm/ja/items/2929647">「玉ねぎ楷書「激」無料版」 (玉点堂)</a></li>

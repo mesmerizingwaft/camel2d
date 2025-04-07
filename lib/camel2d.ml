@@ -75,3 +75,10 @@ let start
     _start_scene context game first_scene;
     Js._false
   )
+
+let _ =
+  Js.export "setFullscreen" (fun () ->
+    let container = Dom_html.getElementById "canvas-wrapper" in
+    ignore @@ Js.Unsafe.meth_call container "requestFullscreen" [||];
+    Js._false
+  )

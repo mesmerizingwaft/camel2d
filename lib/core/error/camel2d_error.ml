@@ -37,7 +37,10 @@ let notify_critical_error msg =
   Dom.appendChild critical_error header;
   Dom.appendChild critical_error message_body;
   Dom.appendChild bg_critical_error critical_error;
-  Dom.appendChild Dom_html.document##.body bg_critical_error
+  let canvas_wrapper =
+    Dom_html.getElementById "canvas-wrapper"
+  in
+  Dom.appendChild canvas_wrapper bg_critical_error
 
 let error_presenter f =
   try

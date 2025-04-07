@@ -23,19 +23,27 @@
                 align-items: center;
                 justify-content: center;
             }
-            #main h2 {
+            #gamebody,#game-description {
                 text-align: center;
             }
+            #canvas-wrapper {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
         </style>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&display=swap" rel="stylesheet">
     </head>
     <body>
-        <div id="system-message"></div>
         <main id="main">
-            <canvas id="canvas-main"></canvas>
-            <section>
+            <section id="gamebody">
+                <div id="canvas-wrapper">
+                    <canvas id="canvas-main"></canvas>
+                </div>
+                <a href="#" onclick="javascript: setFullscreen()">
+                    FullScreen
+                </a>
+            </section>
+            <section id="game-description">
                 <h2>素材</h2>
                 <li>「自宅にて」 https://dova-s.jp/bgm/play4058.html</li>
                 <li>「失敗、ゲームオーバー」 https://dova-s.jp/se/play601.html</li>

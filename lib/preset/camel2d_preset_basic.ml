@@ -72,7 +72,8 @@ end = struct
       | Some (w, h) ->
         let tx = t.x in
         let ty = t.y in
-        return (x >= tx && x <= tx + w && y >= ty && y <= ty + h)
+        let open Camel2d_preset_collision_detection.Rectangle in
+        return (check_inclusion ~x:tx ~y:ty ~w ~h x y)
 
   let update e t =
     let open Updater in
