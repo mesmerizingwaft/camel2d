@@ -22,7 +22,7 @@
  (depends
     ocaml
     uutf
-    js_of_ocaml
+    (js_of_ocaml (= 5.9.1))
     yojson
     ppx_deriving_yojson
     ppx_blob
